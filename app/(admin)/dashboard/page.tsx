@@ -1,1 +1,146 @@
-export default function Page() { return <div>Placeholder for page</div>; }
+import * as React from "react";
+import { PageHeader } from "@/components/ui/page-header";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/data-table";
+import { Activity, TrendingUp, TrendingDown, Clock, UtensilsCrossed, AlertCircle } from "lucide-react";
+import { MOCK_KPIS, MOCK_ORDERS, MOCK_TOP_ITEMS, MOCK_KITCHEN_PULSE } from "@/lib/mock-data";
+
+export default function DashboardPage() {
+  return (
+    <div className="space-y-6">
+      <PageHeader 
+        title="Dashboard" 
+        description="Overview of today's restaurant performance." 
+      />
+
+      {/* Operational Insight Banner */}
+      <Card className="bg-primary-forest text-white border-none shadow-md">
+        <CardContent className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center space-x-4">
+            <div className="h-12 w-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+              <Activity className="h-6 w-6 text-primary-green" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold tracking-tight">Live Restaurant Status</h2>
+              <p className="text-sm text-white/80">Service is flowing smoothly. Average wait time is optimal.</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <StatusBadge status="success" label="Accepting Orders" className="bg-primary-green/20 text-white border-white/10" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* KPIs Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {MOCK_KPIS.map((kpi, idx) => (
+          <Card key={idx}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-text-secondary">{kpi.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-text-primary">{kpi.value}</div>
+              <div className="flex items-center mt-1 text-sm">
+                {kpi.isPositive ? (
+                  <TrendingUp className="h-4 w-4 text-primary-green mr-1" />
+                ) : (
+                  <TrendingDown className="h-4 w-4 text-coral mr-1" />
+                )}
+                <span className={kpi.isPositive ? "text-primary-green" : "text-coral"}>
+                  {kpi.trend}
+                </span>
+                <span className="text-text-secondary ml-2">vs yesterday</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recent Orders */}
+        <div className="lg:col-span-2 space-y-4">
+          <h3 className="text-lg font-semibold text-text-primary">Recent Orders</h3>
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Table</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {MOCK_ORDERS.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">{order.id}</TableCell>
+                    <TableCell>{order.table}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={order.status} />
+                    </TableCell>
+                    <TableCell className="text-text-secondary">{order.time}</TableCell>
+                    <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </div>
+
+        {/* Right Column: Kitchen Pulse & Top Items */}
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-text-primary">Kitchen Pulse</h3>
+            <Card>
+              <CardContent className="p-0 divide-y divide-border-warm">
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Clock className="h-5 w-5 text-text-secondary" />
+                    <span className="text-sm font-medium">Avg Prep Time</span>
+                  </div>
+                  <span className="font-bold text-text-primary">{MOCK_KITCHEN_PULSE.avgPrepTime}</span>
+                </div>
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <UtensilsCrossed className="h-5 w-5 text-text-secondary" />
+                    <span className="text-sm font-medium">Pending Tickets</span>
+                  </div>
+                  <span className="font-bold text-text-primary">{MOCK_KITCHEN_PULSE.pendingTickets}</span>
+                </div>
+                <div className="p-4 flex items-center justify-between bg-coral/5">
+                  <div className="flex items-center space-x-3">
+                    <AlertCircle className="h-5 w-5 text-coral" />
+                    <span className="text-sm font-medium text-coral">Delayed</span>
+                  </div>
+                  <span className="font-bold text-coral">{MOCK_KITCHEN_PULSE.delayedTickets}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-text-primary">Top Selling Items</h3>
+            <Card>
+              <CardContent className="p-0 divide-y divide-border-warm">
+                {MOCK_TOP_ITEMS.map((item) => (
+                  <div key={item.id} className="p-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm text-text-primary">{item.name}</p>
+                      <p className="text-xs text-text-secondary">{item.category}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-sm text-text-primary">{item.sold} sold</p>
+                      <p className="text-xs text-text-secondary">${item.revenue.toFixed(2)}</p>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
