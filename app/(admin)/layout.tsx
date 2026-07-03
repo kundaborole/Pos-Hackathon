@@ -1,1 +1,5 @@
-export default function AdminLayout({ children }: { children: React.ReactNode }) { return <div className="admin-layout">{children}</div>; }
+import { AdminShell } from "@/components/layout/admin-shell";
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return <AdminShell>{children}</AdminShell>;
+}

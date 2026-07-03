@@ -1,1 +1,5 @@
-export default function OrderLayout({ children }: { children: React.ReactNode }) { return <div className="order-layout">{children}</div>; }
+import { CustomerMobileShell } from "@/components/layout/customer-mobile-shell";
+
+export default function OrderLayout({ children }: { children: React.ReactNode }) {
+  return <CustomerMobileShell>{children}</CustomerMobileShell>;
+}
