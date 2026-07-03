@@ -8,6 +8,14 @@ export default async function OrderTrackingPage({ params }: { params: Promise<{ 
   const order = await getPublicOrderDetails(resolvedParams.orderId, resolvedParams.tableToken);
 
   if (!order) {
+    if (resolvedParams.orderId === 'latest') {
+      return (
+        <div className="flex flex-col min-h-screen bg-bg-surface items-center justify-center p-6 text-center">
+          <h1 className="text-2xl font-black text-text-primary mb-2">No Orders Yet</h1>
+          <p className="text-text-secondary font-medium">You haven't placed any orders yet. Go to the Menu to start ordering.</p>
+        </div>
+      );
+    }
     return notFound();
   }
 

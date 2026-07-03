@@ -202,8 +202,8 @@ export default function OrderTrackerClient({
             <Button variant="secondary" className="flex-1 border-border-warm text-text-secondary hover:bg-bg-secondary" disabled>
               <Bell className="mr-2 h-4 w-4" /> Waiter
             </Button>
-            <Button className="flex-[2]" onClick={() => router.push(`/order/${tableToken}/payment`)} disabled>
-              <Receipt className="mr-2 h-4 w-4" /> Pay ${order.total_amount.toFixed(2)}
+            <Button className="flex-[2]" onClick={() => router.push(`/order/${tableToken}/payment/${order.id}`)}>
+              <Receipt className="mr-2 h-4 w-4" /> Pay ₹{order.total_amount.toFixed(2)}
             </Button>
           </div>
 

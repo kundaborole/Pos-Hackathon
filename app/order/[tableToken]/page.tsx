@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { CustomerMobileShell } from "@/components/layout/customer-mobile-shell";
 import { CheckCircle2, Utensils, Bell } from "lucide-react";
 
-export default function TableWelcomePage({ params }: { params: { tableToken: string } }) {
+export default async function TableWelcomePage({ params }: { params: Promise<{ tableToken: string }> }) {
   // Normally tableToken would be used to fetch actual table data.
   // We use mock Table 03 as requested.
-  const token = params.tableToken;
+  const resolvedParams = await params;
+  const token = resolvedParams.tableToken;
 
   return (
     <CustomerMobileShell hideNav={true}>

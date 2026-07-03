@@ -12,6 +12,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 import { Select } from "@/components/ui/select";
 import { FloorWithTables } from "@/lib/api/floors";
+import { saveFloorAction } from "./actions";
+import { useRouter } from "next/navigation";
 
 type TableType = FloorWithTables['tables'][0];
 
@@ -20,9 +22,26 @@ export default function FloorsConfigurationClient({
 }: {
   initialFloors: FloorWithTables[];
 }) {
+  const router = useRouter();
   const [activeFloorId, setActiveFloorId] = React.useState(initialFloors[0]?.id || "");
+
+  // Sync activeFloorId if initialFloors change and no valid floor is selected
+  React.useEffect(() => {
+    if (!activeFloorId && initialFloors.length > 0) {
+      setActiveFloorId(initialFloors[0].id);
+    } else if (activeFloorId && !initialFloors.find(f => f.id === activeFloorId)) {
+      setActiveFloorId(initialFloors[0]?.id || "");
+    }
+  }, [initialFloors, activeFloorId]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingTable, setEditingTable] = React.useState<TableType | null>(null);
+
+  const [isFloorModalOpen, setIsFloorModalOpen] = React.useState(false);
+  const [editingFloor, setEditingFloor] = React.useState<FloorWithTables | null>(null);
+  
+  const [floorName, setFloorName] = React.useState("");
+  const [floorIsActive, setFloorIsActive] = React.useState(true);
+  const [isPending, startTransition] = React.useTransition();
 
   const activeFloor = initialFloors.find(f => f.id === activeFloorId);
   const activeFloorTables = activeFloor?.tables || [];
@@ -35,6 +54,37 @@ export default function FloorsConfigurationClient({
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingTable(null);
+  };
+
+  const handleEditFloor = (floor: FloorWithTables) => {
+    setEditingFloor(floor);
+    setFloorName(floor.name);
+    setFloorIsActive(floor.is_active);
+    setIsFloorModalOpen(true);
+  };
+
+  const handleCloseFloorModal = () => {
+    setIsFloorModalOpen(false);
+    setEditingFloor(null);
+    setFloorName("");
+    setFloorIsActive(true);
+  };
+
+  const handleSaveFloor = () => {
+    if (!floorName.trim()) return;
+    startTransition(async () => {
+      const res = await saveFloorAction({
+        id: editingFloor?.id,
+        name: floorName.trim(),
+        is_active: floorIsActive
+      });
+      if (res.success) {
+        handleCloseFloorModal();
+        router.refresh();
+      } else {
+        alert("Failed to save floor: " + res.error);
+      }
+    });
   };
 
   return (
@@ -54,7 +104,7 @@ export default function FloorsConfigurationClient({
         <div className="w-full md:w-64 flex flex-col space-y-2 bg-bg-surface p-4 rounded-xl border border-border-warm shrink-0">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-semibold text-text-primary">Floors</h3>
-            <Button variant="ghost" size="icon" className="h-6 w-6"><Plus className="h-4 w-4"/></Button>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsFloorModalOpen(true)}><Plus className="h-4 w-4"/></Button>
           </div>
           {initialFloors.map(floor => (
             <button
@@ -180,6 +230,43 @@ export default function FloorsConfigurationClient({
           <div className="flex justify-end space-x-2 pt-4 border-t border-border-warm mt-4">
             <Button variant="ghost" onClick={handleCloseModal}>Cancel</Button>
             <Button onClick={handleCloseModal}>Save Table</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal 
+        isOpen={isFloorModalOpen} 
+        onClose={handleCloseFloorModal} 
+        title={editingFloor ? "Edit Floor" : "Add Floor"}
+      >
+        <div className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-primary">Floor Name</label>
+            <Input 
+              value={floorName}
+              onChange={(e) => setFloorName(e.target.value)}
+              placeholder="e.g. Main Dining Room" 
+              disabled={isPending}
+            />
+          </div>
+          
+          <div className="flex items-center justify-between py-2 border-b border-border-warm">
+            <div>
+              <div className="text-sm font-medium text-text-primary">Active Status</div>
+              <div className="text-xs text-text-secondary">Can customers be seated on this floor?</div>
+            </div>
+            <Switch 
+              checked={floorIsActive} 
+              onChange={(e) => setFloorIsActive(e.target.checked)}
+              disabled={isPending}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4 border-t border-border-warm mt-4">
+            <Button variant="ghost" onClick={handleCloseFloorModal} disabled={isPending}>Cancel</Button>
+            <Button onClick={handleSaveFloor} disabled={isPending || !floorName.trim()}>
+              {isPending ? "Saving..." : "Save Floor"}
+            </Button>
           </div>
         </div>
       </Modal>

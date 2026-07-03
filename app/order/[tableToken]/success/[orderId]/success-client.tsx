@@ -5,12 +5,18 @@ import { useRouter } from "next/navigation";
 import { CustomerMobileShell } from "@/components/layout/customer-mobile-shell";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Star, ReceiptText, Utensils } from "lucide-react";
+import { FullOrder } from "@/lib/api/orders";
 
-export default function PaymentSuccessPage({ params }: { params: { tableToken: string } }) {
+export default function SuccessClient({
+  order,
+  tableToken,
+  tableNumber
+}: {
+  order: FullOrder;
+  tableToken: string;
+  tableNumber: string;
+}) {
   const router = useRouter();
-  const token = params.tableToken;
-  
-  const receiptRef = React.useRef<HTMLDivElement>(null);
   
   const [rating, setRating] = React.useState(0);
   const [hoverRating, setHoverRating] = React.useState(0);
@@ -18,9 +24,10 @@ export default function PaymentSuccessPage({ params }: { params: { tableToken: s
 
   const handleRating = (r: number) => {
     setRating(r);
-    // In a real app we'd save this to the DB here
     setTimeout(() => setSubmitted(true), 600);
   };
+
+  const receiptRef = React.useRef<HTMLDivElement>(null);
 
   const scrollToReceipt = () => {
     receiptRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -38,12 +45,12 @@ export default function PaymentSuccessPage({ params }: { params: { tableToken: s
             </div>
           </div>
           <h1 className="text-2xl font-black text-white mb-2">Payment Successful!</h1>
-          <div className="text-4xl font-black text-white mb-4">₹794.40</div>
+          <div className="text-4xl font-black text-white mb-4">₹{order.total_amount.toFixed(2)}</div>
           
           <div className="inline-flex items-center space-x-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-white text-sm">
-            <span className="font-medium opacity-80">Paid via UPI</span>
+            <span className="font-medium opacity-80">Paid</span>
             <span className="w-1 h-1 rounded-full bg-white/50"></span>
-            <span className="font-bold tracking-wider uppercase text-primary-green">Paid</span>
+            <span className="font-bold tracking-wider uppercase text-primary-green">Completed</span>
           </div>
         </div>
 
@@ -53,11 +60,11 @@ export default function PaymentSuccessPage({ params }: { params: { tableToken: s
           <div className="bg-white border border-border-warm rounded-2xl p-5 shadow-sm flex justify-between items-center">
             <div>
               <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">Order Number</div>
-              <div className="font-black text-text-primary">#ORD000124</div>
+              <div className="font-black text-text-primary">#{order.order_number}</div>
             </div>
             <div className="text-right">
               <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-1">Table</div>
-              <div className="font-black text-text-primary">03</div>
+              <div className="font-black text-text-primary">{tableNumber}</div>
             </div>
           </div>
 
@@ -66,7 +73,7 @@ export default function PaymentSuccessPage({ params }: { params: { tableToken: s
             <Button variant="secondary" className="h-14 bg-white border-border-warm text-text-primary hover:bg-bg-secondary" onClick={scrollToReceipt}>
               <ReceiptText className="mr-2 h-4 w-4 text-text-secondary" /> View Receipt
             </Button>
-            <Button className="h-14 bg-primary-forest text-white hover:bg-primary-forest/90" onClick={() => router.push(`/order/${token}/menu`)}>
+            <Button className="h-14 bg-primary-forest text-white hover:bg-primary-forest/90" onClick={() => router.push(`/order/${tableToken}/menu`)}>
               <Utensils className="mr-2 h-4 w-4" /> Order More
             </Button>
           </div>
@@ -127,39 +134,32 @@ export default function PaymentSuccessPage({ params }: { params: { tableToken: s
             </div>
 
             <div className="space-y-4 mb-6">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium text-text-primary">1x Margherita Pizza</span>
-                <span className="text-text-secondary">₹250.00</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="font-medium text-text-primary">1x Cheese Burger</span>
-                <span className="text-text-secondary">₹200.00</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="font-medium text-text-primary">2x Cappuccino</span>
-                <span className="text-text-secondary">₹240.00</span>
-              </div>
+              {order.items.map(item => (
+                <div key={item.id} className="flex justify-between text-sm">
+                  <span className="font-medium text-text-primary">{item.quantity}x {item.product_name_snapshot}</span>
+                  <span className="text-text-secondary">₹{item.total_price.toFixed(2)}</span>
+                </div>
+              ))}
             </div>
 
             <div className="border-t border-border-warm border-dashed pt-4 space-y-2 mb-4">
               <div className="flex justify-between text-sm">
                 <span className="text-text-secondary">Subtotal</span>
-                <span className="font-medium text-text-primary">₹690.00</span>
+                <span className="font-medium text-text-primary">₹{order.subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-text-secondary">Tax (15.13%)</span>
-                <span className="font-medium text-text-primary">₹104.40</span>
+                <span className="text-text-secondary">Tax</span>
+                <span className="font-medium text-text-primary">₹{order.tax_amount.toFixed(2)}</span>
               </div>
             </div>
 
             <div className="bg-bg-secondary rounded-lg p-4 flex justify-between items-center">
               <span className="font-bold text-text-primary">Total Paid</span>
-              <span className="text-xl font-black text-primary-forest">₹794.40</span>
+              <span className="text-xl font-black text-primary-forest">₹{order.total_amount.toFixed(2)}</span>
             </div>
             
             <div className="text-center text-[10px] text-text-secondary mt-6 font-medium">
               Thank you for dining with us!<br/>
-              GSTIN: 27AAAAA0000A1Z5
             </div>
 
           </div>

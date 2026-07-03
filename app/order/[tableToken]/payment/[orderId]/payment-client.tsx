@@ -6,26 +6,40 @@ import { CustomerMobileShell } from "@/components/layout/customer-mobile-shell";
 import { Button } from "@/components/ui/button";
 import { QrCode, Banknote, CreditCard, CheckCircle2, ChevronLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { FullOrder } from "@/lib/api/orders";
+import { processPaymentAction } from "./actions";
 
-export default function CustomerPaymentPage({ params }: { params: Promise<{ tableToken: string }> }) {
+export default function PaymentClient({
+  order,
+  tableToken
+}: {
+  order: FullOrder;
+  tableToken: string;
+}) {
   const router = useRouter();
-  const [token, setToken] = React.useState<string>("");
-
-  React.useEffect(() => {
-    params.then((p) => setToken(p.tableToken));
-  }, [params]);
   
   const [selectedMethod, setSelectedMethod] = React.useState<"upi" | "cash" | "card">("upi");
   const [paymentState, setPaymentState] = React.useState<"waiting" | "processing" | "confirmed">("waiting");
+  const [error, setError] = React.useState<string | null>(null);
 
-  const handleSimulatePayment = () => {
+  const handleSimulatePayment = async () => {
     setPaymentState("processing");
-    setTimeout(() => {
+    setError(null);
+    
+    // Simulate slight delay for effect
+    await new Promise(res => setTimeout(res, 1000));
+    
+    const res = await processPaymentAction(tableToken, order.id, selectedMethod, order.total_amount);
+
+    if (res.success) {
       setPaymentState("confirmed");
       setTimeout(() => {
-        router.push(`/order/${token}/success`);
+        router.push(`/order/${tableToken}/success/${order.id}`);
       }, 1000);
-    }, 2000);
+    } else {
+      setError(res.error || "Payment failed");
+      setPaymentState("waiting");
+    }
   };
 
   return (
@@ -39,16 +53,22 @@ export default function CustomerPaymentPage({ params }: { params: Promise<{ tabl
           </button>
           <div className="flex-1">
             <h1 className="text-xl font-black text-text-primary">Payment</h1>
-            <div className="text-xs font-bold text-text-secondary">Order #ORD000124</div>
+            <div className="text-xs font-bold text-text-secondary">Order #{order.order_number}</div>
           </div>
         </div>
 
         <div className="p-4 space-y-6 flex-1">
           
+          {error && (
+            <div className="bg-coral/10 text-coral p-3 rounded-lg text-sm font-medium border border-coral/20">
+              {error}
+            </div>
+          )}
+
           {/* Amount Due */}
           <div className="bg-white border border-border-warm rounded-2xl p-6 shadow-sm text-center">
             <p className="text-sm font-bold text-text-secondary uppercase tracking-wider mb-1">Amount Due</p>
-            <div className="text-4xl font-black text-primary-forest">₹794.40</div>
+            <div className="text-4xl font-black text-primary-forest">₹{order.total_amount.toFixed(2)}</div>
           </div>
 
           {/* Payment Methods */}
@@ -131,7 +151,7 @@ export default function CustomerPaymentPage({ params }: { params: Promise<{ tabl
               </div>
               <div className="font-bold text-text-primary mb-1">cafehub@upi</div>
               <div className="text-sm font-bold text-primary-forest bg-primary-green/10 px-3 py-1 rounded-full mb-6">
-                Total: ₹794.40
+                Total: ₹{order.total_amount.toFixed(2)}
               </div>
 
               {paymentState === "waiting" && (
@@ -159,22 +179,13 @@ export default function CustomerPaymentPage({ params }: { params: Promise<{ tabl
 
         {/* Footer Actions */}
         <div className="bg-white border-t border-border-warm p-4 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-          {selectedMethod === "upi" ? (
-            <Button 
-              className="w-full h-14 text-lg font-bold" 
-              onClick={handleSimulatePayment}
-              disabled={paymentState !== "waiting"}
-            >
-              {paymentState === "processing" ? "Verifying..." : paymentState === "confirmed" ? "Success!" : "I Have Paid"}
-            </Button>
-          ) : (
-            <Button 
-              className="w-full h-14 text-lg font-bold" 
-              onClick={() => router.push(`/order/${token}/success`)}
-            >
-              Proceed to Counter
-            </Button>
-          )}
+          <Button 
+            className="w-full h-14 text-lg font-bold" 
+            onClick={handleSimulatePayment}
+            disabled={paymentState !== "waiting"}
+          >
+            {paymentState === "processing" ? "Processing..." : paymentState === "confirmed" ? "Success!" : "Complete Payment"}
+          </Button>
         </div>
 
       </div>

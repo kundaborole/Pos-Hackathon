@@ -3,10 +3,28 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/data-table";
-import { Activity, TrendingUp, TrendingDown, Clock, UtensilsCrossed, AlertCircle } from "lucide-react";
-import { MOCK_KPIS, MOCK_ORDERS, MOCK_TOP_ITEMS, MOCK_KITCHEN_PULSE } from "@/lib/mock-data";
+import { Activity, TrendingUp, TrendingDown, UtensilsCrossed, CheckCircle2 } from "lucide-react";
+import { getDashboardMetrics } from "@/lib/api/metrics";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return redirect('/login');
+
+  const { data: profile } = await supabase.from('profiles').select('restaurant_id').eq('id', user.id).single();
+  if (!profile) return redirect('/login');
+
+  const metrics = await getDashboardMetrics(profile.restaurant_id);
+
+  const kpiData = [
+    { title: "Today's Revenue", value: `₹${metrics.kpis.revenue.toFixed(2)}`, trend: metrics.kpis.revenueTrend, isPositive: metrics.kpis.isRevenuePositive },
+    { title: "Total Orders", value: metrics.kpis.orders.toString(), trend: metrics.kpis.ordersTrend, isPositive: metrics.kpis.isOrdersPositive },
+    { title: "Avg. Ticket Size", value: `₹${metrics.kpis.avgTicket.toFixed(2)}`, trend: metrics.kpis.ticketTrend, isPositive: metrics.kpis.isTicketPositive },
+    { title: "Pending Kitchen", value: metrics.kitchenPulse.pendingTickets.toString(), trend: "Current", isPositive: true },
+  ];
+
   return (
     <div className="space-y-6">
       <PageHeader 
@@ -23,7 +41,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <h2 className="text-lg font-semibold tracking-tight">Live Restaurant Status</h2>
-              <p className="text-sm text-white/80">Service is flowing smoothly. Average wait time is optimal.</p>
+              <p className="text-sm text-white/80">Service is flowing smoothly. Accept orders.</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -34,7 +52,7 @@ export default function DashboardPage() {
 
       {/* KPIs Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {MOCK_KPIS.map((kpi, idx) => (
+        {kpiData.map((kpi, idx) => (
           <Card key={idx}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-text-secondary">{kpi.title}</CardTitle>
@@ -73,23 +91,27 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {MOCK_ORDERS.map((order) => (
+                {metrics.recentOrders.length > 0 ? metrics.recentOrders.map((order) => (
                   <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.id}</TableCell>
+                    <TableCell className="font-medium">{order.order_number}</TableCell>
                     <TableCell>{order.table}</TableCell>
                     <TableCell>
-                      <StatusBadge status={order.status} />
+                      <StatusBadge status={order.status as any} />
                     </TableCell>
                     <TableCell className="text-text-secondary">{order.time}</TableCell>
-                    <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">₹{order.total.toFixed(2)}</TableCell>
                   </TableRow>
-                ))}
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-6 text-text-secondary">No orders today.</TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </Card>
         </div>
 
-        {/* Right Column: Kitchen Pulse & Top Items */}
+        {/* Right Column: Kitchen Pulse */}
         <div className="space-y-6">
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-text-primary">Kitchen Pulse</h3>
@@ -97,45 +119,18 @@ export default function DashboardPage() {
               <CardContent className="p-0 divide-y divide-border-warm">
                 <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <Clock className="h-5 w-5 text-text-secondary" />
-                    <span className="text-sm font-medium">Avg Prep Time</span>
-                  </div>
-                  <span className="font-bold text-text-primary">{MOCK_KITCHEN_PULSE.avgPrepTime}</span>
-                </div>
-                <div className="p-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
                     <UtensilsCrossed className="h-5 w-5 text-text-secondary" />
                     <span className="text-sm font-medium">Pending Tickets</span>
                   </div>
-                  <span className="font-bold text-text-primary">{MOCK_KITCHEN_PULSE.pendingTickets}</span>
+                  <span className="font-bold text-text-primary">{metrics.kitchenPulse.pendingTickets}</span>
                 </div>
-                <div className="p-4 flex items-center justify-between bg-coral/5">
+                <div className="p-4 flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <AlertCircle className="h-5 w-5 text-coral" />
-                    <span className="text-sm font-medium text-coral">Delayed</span>
+                    <CheckCircle2 className="h-5 w-5 text-text-secondary" />
+                    <span className="text-sm font-medium">Completed Today</span>
                   </div>
-                  <span className="font-bold text-coral">{MOCK_KITCHEN_PULSE.delayedTickets}</span>
+                  <span className="font-bold text-text-primary">{metrics.kitchenPulse.completedToday}</span>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-text-primary">Top Selling Items</h3>
-            <Card>
-              <CardContent className="p-0 divide-y divide-border-warm">
-                {MOCK_TOP_ITEMS.map((item) => (
-                  <div key={item.id} className="p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm text-text-primary">{item.name}</p>
-                      <p className="text-xs text-text-secondary">{item.category}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-sm text-text-primary">{item.sold} sold</p>
-                      <p className="text-xs text-text-secondary">${item.revenue.toFixed(2)}</p>
-                    </div>
-                  </div>
-                ))}
               </CardContent>
             </Card>
           </div>

@@ -21,9 +21,10 @@ export const getFloors = cache(async (restaurantId: string): Promise<FloorWithTa
     .order('display_order', { ascending: true });
 
   if (error) {
-    console.error('Error fetching floors:', error);
+    console.error('[DEBUG getFloors] Supabase error:', error);
     return [];
   }
+  console.log('[DEBUG getFloors] Supabase returned data count:', data?.length);
 
   // Ensure tables are ordered by table_number logically (e.g. 1, 2, 3...)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

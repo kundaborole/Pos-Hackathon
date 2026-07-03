@@ -9,15 +9,20 @@ import { Modal } from "@/components/ui/modal";
 import { Plus, Search, Edit2, MoveVertical } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { CategoryWithProductCount } from "@/lib/api/products";
+import { saveCategoryAction } from "./actions";
+import { useRouter } from "next/navigation";
 
 export default function CategoriesClient({
   initialCategories
 }: {
   initialCategories: CategoryWithProductCount[];
 }) {
+  const router = useRouter();
   const [search, setSearch] = React.useState("");
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingCategory, setEditingCategory] = React.useState<CategoryWithProductCount | null>(null);
+  const [categoryName, setCategoryName] = React.useState("");
+  const [isPending, startTransition] = React.useTransition();
 
   const filteredCategories = initialCategories.filter(c => 
     c.name.toLowerCase().includes(search.toLowerCase())
@@ -25,12 +30,30 @@ export default function CategoriesClient({
 
   const handleEdit = (category: CategoryWithProductCount) => {
     setEditingCategory(category);
+    setCategoryName(category.name);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingCategory(null);
+    setCategoryName("");
+  };
+
+  const handleSaveCategory = () => {
+    if (!categoryName.trim()) return;
+    startTransition(async () => {
+      const res = await saveCategoryAction({
+        id: editingCategory?.id,
+        name: categoryName.trim()
+      });
+      if (res.success) {
+        handleCloseModal();
+        router.refresh();
+      } else {
+        alert("Failed to save category: " + res.error);
+      }
+    });
   };
 
   return (
@@ -107,11 +130,18 @@ export default function CategoriesClient({
         <div className="space-y-4 pt-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-primary">Category Name</label>
-            <Input defaultValue={editingCategory?.name || ""} placeholder="e.g. Salads" />
+            <Input 
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              placeholder="e.g. Salads" 
+              disabled={isPending}
+            />
           </div>
           <div className="flex justify-end space-x-2 pt-4 border-t border-border-warm">
-            <Button variant="ghost" onClick={handleCloseModal}>Cancel</Button>
-            <Button onClick={handleCloseModal}>Save Category</Button>
+            <Button variant="ghost" onClick={handleCloseModal} disabled={isPending}>Cancel</Button>
+            <Button onClick={handleSaveCategory} disabled={isPending || !categoryName.trim()}>
+              {isPending ? "Saving..." : "Save Category"}
+            </Button>
           </div>
         </div>
       </Modal>

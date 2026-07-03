@@ -6,10 +6,16 @@ import { CustomerMobileShell } from "@/components/layout/customer-mobile-shell";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, MapPin, Search } from "lucide-react";
 
-export default function OrderConfirmationPage({ params }: { params: { tableToken: string } }) {
+export default function OrderConfirmationPage({ params }: { params: Promise<{ tableToken: string }> }) {
   const router = useRouter();
-  const token = params.tableToken;
+  const [token, setToken] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    params.then((p) => setToken(p.tableToken));
+  }, [params]);
   
+  if (!token) return null;
+
   return (
     <CustomerMobileShell hideNav>
       <div className="flex flex-col min-h-screen bg-primary-forest relative p-6">
