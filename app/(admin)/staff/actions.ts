@@ -10,15 +10,19 @@ export async function createStaffAccount(formData: FormData) {
   // 1. Validate requester
   const adminProfile = await requireRole(["admin"]);
 
-  const firstName = formData.get("firstName") as string;
-  const lastName = formData.get("lastName") as string;
+  const fullName = formData.get("fullName") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const role = formData.get("role") as StaffRole;
   const staffPin = formData.get("staffPin") as string;
 
-  if (!firstName || !lastName || !email || !password || !role) {
-    return { error: "All fields are required" };
+  if (!fullName || !email || !password || !role) {
+    const missing = [];
+    if (!fullName) missing.push("fullName");
+    if (!email) missing.push("email");
+    if (!password) missing.push("password");
+    if (!role) missing.push("role");
+    return { error: `Missing required fields: ${missing.join(", ")}` };
   }
 
   const validRoles: StaffRole[] = ["admin", "cashier", "waiter", "kitchen"];
@@ -42,18 +46,16 @@ export async function createStaffAccount(formData: FormData) {
   const userId = authData.user.id;
 
   try {
-    // 3. Create Profile linked to the admin's restaurant
-    const { error: profileError } = await adminClient
-      .from("profiles")
-      .insert({
-        id: userId,
-        restaurant_id: adminProfile.restaurant_id, // Scope to same restaurant!
-        full_name: `${firstName} ${lastName}`,
-        email,
-        role: role,
-        staff_id: staffPin || null,
-        is_active: true,
-      });
+    // 3. Create Profile
+    const { error: profileError } = await adminClient.from("profiles").insert({
+      id: authData.user.id,
+      restaurant_id: adminProfile.restaurant_id,
+      full_name: fullName,
+      email: email,
+      staff_id: staffPin?.trim() ? staffPin.trim() : null,
+      role: role,
+      is_active: true
+    });
 
     if (profileError) {
       throw new Error(profileError.message || "Failed to create staff profile");

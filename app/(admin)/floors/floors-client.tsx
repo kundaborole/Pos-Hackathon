@@ -12,8 +12,9 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 import { Select } from "@/components/ui/select";
 import { FloorWithTables } from "@/lib/api/floors";
-import { saveFloorAction } from "./actions";
+import { saveFloorAction, saveTableAction } from "./actions";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 type TableType = FloorWithTables['tables'][0];
 
@@ -54,6 +55,35 @@ export default function FloorsConfigurationClient({
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingTable(null);
+  };
+
+  const handleSaveTable = async (formData: FormData) => {
+    startTransition(async () => {
+      const tableNumber = formData.get("tableNumber") as string;
+      const capacity = parseInt(formData.get("capacity") as string) || 4;
+      const floorId = formData.get("floorId") as string;
+      // If editingTable exists, we preserve its active status unless we added a hidden input for it, 
+      // but for simplicity let's default to true on create, or preserve on edit
+      const isActive = editingTable ? editingTable.is_active : true;
+      const qrToken = editingTable?.qr_token || `qr-${Date.now()}`;
+
+      if (!tableNumber || !floorId) return;
+
+      const res = await saveTableAction({
+        id: editingTable?.id,
+        table_number: tableNumber,
+        capacity,
+        floor_id: floorId,
+        is_active: isActive,
+        qr_token: qrToken
+      });
+      if (res.success) {
+        handleCloseModal();
+        router.refresh();
+      } else {
+        alert("Failed to save table: " + res.error);
+      }
+    });
   };
 
   const handleEditFloor = (floor: FloorWithTables) => {
@@ -190,23 +220,23 @@ export default function FloorsConfigurationClient({
         onClose={handleCloseModal} 
         title={editingTable ? "Edit Table" : "Add Table"}
       >
-        <div className="space-y-4 pt-4">
+        <form action={handleSaveTable} className="space-y-4 pt-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-text-primary">Table Number</label>
-              <Input defaultValue={editingTable?.table_number || ""} placeholder="e.g. 12" />
+              <Input name="tableNumber" defaultValue={editingTable?.table_number || ""} placeholder="e.g. 12" required />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-text-primary">Seats</label>
-              <Input type="number" defaultValue={editingTable?.capacity || 4} />
+              <Input name="capacity" type="number" defaultValue={editingTable?.capacity || 4} required />
             </div>
           </div>
           
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-primary">Floor</label>
-            <Select defaultValue={editingTable?.floor_id || activeFloorId}>
+            <select name="floorId" defaultValue={editingTable?.floor_id || activeFloorId} className="flex h-10 w-full rounded-md border border-border-warm bg-bg-surface px-3 py-2 text-sm text-text-primary shadow-sm" required>
               {initialFloors.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-            </Select>
+            </select>
           </div>
 
           <div className="flex items-center justify-between py-2 border-b border-border-warm">
@@ -228,10 +258,13 @@ export default function FloorsConfigurationClient({
           </div>
 
           <div className="flex justify-end space-x-2 pt-4 border-t border-border-warm mt-4">
-            <Button variant="ghost" onClick={handleCloseModal}>Cancel</Button>
-            <Button onClick={handleCloseModal}>Save Table</Button>
+            <Button variant="ghost" type="button" onClick={handleCloseModal} disabled={isPending}>Cancel</Button>
+            <Button type="submit" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Table
+            </Button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       <Modal 

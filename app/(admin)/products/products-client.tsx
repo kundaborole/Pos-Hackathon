@@ -8,8 +8,10 @@ import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@
 import { Drawer } from "@/components/ui/drawer";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Search, Edit2, Image as ImageIcon } from "lucide-react";
+import { Plus, Search, Edit2, Image as ImageIcon, Loader2 } from "lucide-react";
 import { FullProduct, CategoryWithProductCount } from "@/lib/api/products";
+import { saveProductAction } from "./actions";
+import { useRouter } from "next/navigation";
 
 export default function ProductsClient({
   initialProducts,
@@ -23,6 +25,8 @@ export default function ProductsClient({
   const [availabilityFilter, setAvailabilityFilter] = React.useState("");
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [editingProduct, setEditingProduct] = React.useState<FullProduct | null>(null);
+  const [isPending, startTransition] = React.useTransition();
+  const router = useRouter();
 
   const filteredProducts = initialProducts.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -41,6 +45,34 @@ export default function ProductsClient({
   const handleCloseDrawer = () => {
     setIsDrawerOpen(false);
     setEditingProduct(null);
+  };
+
+  const handleSaveProduct = async (formData: FormData) => {
+    startTransition(async () => {
+      const name = formData.get("name") as string;
+      const category_id = formData.get("category_id") as string;
+      const base_price = parseFloat(formData.get("base_price") as string) || 0;
+      
+      const is_available = editingProduct ? editingProduct.is_available : true;
+      const send_to_kitchen = editingProduct ? editingProduct.send_to_kitchen : true;
+
+      if (!name || !category_id) return;
+
+      const res = await saveProductAction({
+        id: editingProduct?.id,
+        name,
+        category_id,
+        base_price,
+        is_available,
+        send_to_kitchen
+      });
+      if (res.success) {
+        handleCloseDrawer();
+        router.refresh();
+      } else {
+        alert("Failed to save product: " + res.error);
+      }
+    });
   };
 
   return (
@@ -137,24 +169,24 @@ export default function ProductsClient({
         title={editingProduct ? "Edit Product" : "Add Product"}
         position="right"
       >
-        <div className="space-y-6 pt-4 flex flex-col h-full">
+        <form action={handleSaveProduct} className="space-y-6 pt-4 flex flex-col h-full">
           <div className="flex-1 space-y-6 overflow-y-auto pr-2 pb-20">
             <div className="space-y-4">
               <h3 className="font-semibold text-text-primary border-b border-border-warm pb-2">Basic Info</h3>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-primary">Product Name</label>
-                <Input defaultValue={editingProduct?.name || ""} placeholder="e.g. Classic Burger" />
+                <Input name="name" defaultValue={editingProduct?.name || ""} placeholder="e.g. Classic Burger" required />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-primary">Category</label>
-                <Select defaultValue={editingProduct?.category_id || ""}>
+                <select name="category_id" defaultValue={editingProduct?.category_id || ""} className="flex h-10 w-full rounded-md border border-border-warm bg-bg-surface px-3 py-2 text-sm text-text-primary shadow-sm" required>
                   <option value="" disabled>Select Category</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </Select>
+                </select>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-primary">Base Price ($)</label>
-                <Input type="number" defaultValue={editingProduct?.base_price || ""} placeholder="0.00" />
+                <Input name="base_price" type="number" step="0.01" defaultValue={editingProduct?.base_price || ""} placeholder="0.00" required />
               </div>
             </div>
 
@@ -178,9 +210,12 @@ export default function ProductsClient({
           </div>
           
           <div className="pt-4 border-t border-border-warm mt-auto bg-bg-surface">
-            <Button className="w-full" onClick={handleCloseDrawer}>Save Product</Button>
+            <Button type="submit" className="w-full" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Product
+            </Button>
           </div>
-        </div>
+        </form>
       </Drawer>
     </div>
   );

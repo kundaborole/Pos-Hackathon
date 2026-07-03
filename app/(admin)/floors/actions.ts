@@ -42,3 +42,51 @@ export async function saveFloorAction(payload: { id?: string; name: string; is_a
   revalidatePath('/floors');
   return { success: true };
 }
+
+export async function saveTableAction(payload: { 
+  id?: string; 
+  floor_id: string; 
+  table_number: string; 
+  capacity: number; 
+  is_active: boolean; 
+  qr_token: string;
+}) {
+  const supabase = createAdminClient();
+  const profile = await requireAuth();
+  const restaurant_id = profile.restaurant_id;
+
+  if (!restaurant_id) throw new Error("No restaurant found for current user");
+
+  if (payload.id) {
+    const { error } = await supabase
+      .from('restaurant_tables')
+      .update({
+        table_number: payload.table_number,
+        capacity: payload.capacity,
+        is_active: payload.is_active,
+        floor_id: payload.floor_id,
+        qr_token: payload.qr_token
+      })
+      .eq('id', payload.id)
+      .eq('restaurant_id', restaurant_id);
+    
+    if (error) return { success: false, error: error.message };
+  } else {
+    const { error } = await supabase
+      .from('restaurant_tables')
+      .insert({
+        restaurant_id,
+        floor_id: payload.floor_id,
+        table_number: payload.table_number,
+        capacity: payload.capacity,
+        is_active: payload.is_active,
+        qr_token: payload.qr_token,
+        status: 'available'
+      });
+      
+    if (error) return { success: false, error: error.message };
+  }
+
+  revalidatePath('/floors');
+  return { success: true };
+}
