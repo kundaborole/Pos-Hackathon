@@ -162,6 +162,48 @@ export interface POSSessionSummary {
   upiSales?: number;
 }
 
+export type StaffRole = 'Admin' | 'Cashier' | 'Waiter' | 'Kitchen Staff';
+
+export interface StaffMember {
+  id: string;
+  name: string;
+  email: string;
+  staffId: string;
+  role: StaffRole;
+  assignedTerminal?: string;
+  assignedStation?: string;
+  shiftStatus: 'Active' | 'Off-shift';
+  accountStatus: 'Active' | 'Inactive';
+}
+
+export interface SalesDataPoint {
+  date: string;
+  sales: number;
+}
+
+export interface PaymentSplit {
+  method: string;
+  amount: number;
+  percentage: number;
+}
+
+export interface TopProduct {
+  id: string;
+  name: string;
+  quantitySold: number;
+  revenue: number;
+}
+
+export interface SessionPerformance {
+  sessionId: string;
+  cashier: string;
+  orders: number;
+  sales: number;
+  openingTime: string;
+  closingTime?: string;
+  status: 'Active' | 'Closed';
+}
+
 export const MOCK_FLOORS: Floor[] = [
   { id: "FL-1", name: "Ground Floor", active: true },
   { id: "FL-2", name: "First Floor", active: true },
@@ -238,6 +280,42 @@ export const MOCK_POS_TERMINALS: POSTerminal[] = [
 
 export const MOCK_POS_SESSION_SUMMARIES: POSSessionSummary[] = [
   { id: "SES-024", terminalId: "TER-1", cashier: "Rahul", status: "open", openedAt: "09:00 AM" }
+];
+
+export const MOCK_STAFF: StaffMember[] = [
+  { id: "STF-1", name: "System Admin", email: "admin@cafehub.com", staffId: "EMP001", role: "Admin", shiftStatus: "Active", accountStatus: "Active" },
+  { id: "STF-2", name: "Rahul Sharma", email: "rahul@cafehub.com", staffId: "EMP002", role: "Cashier", assignedTerminal: "Main Counter POS", shiftStatus: "Active", accountStatus: "Active" },
+  { id: "STF-3", name: "Priya Singh", email: "priya@cafehub.com", staffId: "EMP003", role: "Waiter", shiftStatus: "Active", accountStatus: "Active" },
+  { id: "STF-4", name: "Chef John", email: "john@cafehub.com", staffId: "EMP004", role: "Kitchen Staff", assignedStation: "Main Kitchen", shiftStatus: "Off-shift", accountStatus: "Active" },
+];
+
+export const MOCK_SALES_TREND: SalesDataPoint[] = [
+  { date: "Mon", sales: 12500 },
+  { date: "Tue", sales: 14200 },
+  { date: "Wed", sales: 13800 },
+  { date: "Thu", sales: 16500 },
+  { date: "Fri", sales: 22400 },
+  { date: "Sat", sales: 26800 },
+  { date: "Sun", sales: 24500 },
+];
+
+export const MOCK_PAYMENT_SPLIT: PaymentSplit[] = [
+  { method: "UPI", amount: 62290, percentage: 50 },
+  { method: "Card", amount: 37374, percentage: 30 },
+  { method: "Cash", amount: 24916, percentage: 20 },
+];
+
+export const MOCK_TOP_PRODUCTS: TopProduct[] = [
+  { id: "P1", name: "Margherita Pizza", quantitySold: 145, revenue: 43355 },
+  { id: "P2", name: "Cappuccino", quantitySold: 210, revenue: 31500 },
+  { id: "P3", name: "Pasta Alfredo", quantitySold: 85, revenue: 29665 },
+  { id: "P4", name: "Classic Burger", quantitySold: 112, revenue: 27888 },
+];
+
+export const MOCK_SESSION_PERFORMANCE: SessionPerformance[] = [
+  { sessionId: "SES-024", cashier: "Rahul Sharma", orders: 42, sales: 14500, openingTime: "09:00 AM", status: "Active" },
+  { sessionId: "SES-023", cashier: "Amit Kumar", orders: 128, sales: 45200, openingTime: "04:00 PM", closingTime: "11:30 PM", status: "Closed" },
+  { sessionId: "SES-022", cashier: "Rahul Sharma", orders: 56, sales: 18400, openingTime: "08:30 AM", closingTime: "04:00 PM", status: "Closed" },
 ];
 
 export const MOCK_CATEGORIES: Category[] = [
