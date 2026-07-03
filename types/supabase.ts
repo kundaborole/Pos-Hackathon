@@ -663,12 +663,8 @@ export interface Database {
         }
       }
     }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      [_ in never]: never
-    }
+    Views: Record<string, never>
+    Functions: Record<string, never>
     Enums: {
       kitchen_status: "pending" | "preparing" | "completed"
       order_source: "pos" | "waiter" | "qr" | "kiosk"
@@ -692,8 +688,6 @@ export interface Database {
         | "waiting_payment"
         | "cleaning"
     }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    CompositeTypes: Record<string, never>
   }
 }

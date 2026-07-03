@@ -16,22 +16,23 @@ import {
   BarChart3, 
   Settings 
 } from "lucide-react";
+import { Database } from "@/types/supabase";
 
 const NAV_ITEMS = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Products", href: "/products", icon: Package },
-  { name: "Categories", href: "/categories", icon: Tags },
-  { name: "Orders", href: "/orders", icon: ClipboardList },
-  { name: "Floors & Tables", href: "/floors", icon: Store },
-  { name: "POS Terminals", href: "/terminals", icon: MonitorSmartphone },
-  { name: "Kitchen Config", href: "/kitchen-config", icon: ChefHat },
-  { name: "Payment Methods", href: "/payment-methods", icon: CreditCard },
-  { name: "Staff & Roles", href: "/staff", icon: Users },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin"] },
+  { name: "Products", href: "/products", icon: Package, roles: ["admin"] },
+  { name: "Categories", href: "/categories", icon: Tags, roles: ["admin"] },
+  { name: "Orders", href: "/orders", icon: ClipboardList, roles: ["admin"] },
+  { name: "Floors & Tables", href: "/floors", icon: Store, roles: ["admin"] },
+  { name: "POS Terminals", href: "/terminals", icon: MonitorSmartphone, roles: ["admin"] },
+  { name: "Kitchen Config", href: "/kitchen-config", icon: ChefHat, roles: ["admin"] },
+  { name: "Payment Methods", href: "/payment-methods", icon: CreditCard, roles: ["admin"] },
+  { name: "Staff & Roles", href: "/staff", icon: Users, roles: ["admin"] },
+  { name: "Reports", href: "/reports", icon: BarChart3, roles: ["admin"] },
+  { name: "Settings", href: "/settings", icon: Settings, roles: ["admin"] },
 ];
 
-export function AdminSidebar({ className }: { className?: string }) {
+export function AdminSidebar({ className, profile }: { className?: string; profile?: Database['public']['Tables']['profiles']['Row'] }) {
   const pathname = usePathname();
 
   return (
@@ -40,7 +41,7 @@ export function AdminSidebar({ className }: { className?: string }) {
         <h1 className="text-xl font-bold text-primary-forest tracking-tight">Cafe Hub</h1>
       </div>
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter(item => !item.roles || !profile || (item.roles as string[]).includes(profile.role)).map((item) => {
           const isActive = pathname.startsWith(item.href);
           return (
             <Link

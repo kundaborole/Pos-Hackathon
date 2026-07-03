@@ -12,6 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Search, Edit2, ShieldAlert, RotateCcw } from "lucide-react";
 import { MOCK_STAFF, StaffMember } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { createStaffAccount } from "./actions";
+import { Loader2 } from "lucide-react";
 
 export default function StaffPage() {
   const [staff] = React.useState(MOCK_STAFF);
@@ -20,6 +22,8 @@ export default function StaffPage() {
   
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingStaff, setEditingStaff] = React.useState<StaffMember | null>(null);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
   const filteredStaff = staff.filter(s => {
     const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -36,6 +40,31 @@ export default function StaffPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingStaff(null);
+    setError(null);
+  };
+
+  const handleCreateStaff = async (formData: FormData) => {
+    setError(null);
+    setLoading(true);
+    
+    // Parse name string into first/last
+    const fullName = formData.get("fullName") as string;
+    const nameParts = fullName.split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    
+    formData.append("firstName", firstName);
+    formData.append("lastName", lastName);
+
+    const result = await createStaffAccount(formData);
+    
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+    } else {
+      handleCloseModal();
+      // In a real app we'd refresh the server component data here
+    }
   };
 
   const getRoleBadgeStyle = (role: string) => {
@@ -176,32 +205,37 @@ export default function StaffPage() {
         onClose={handleCloseModal} 
         title={editingStaff ? "Edit Staff Member" : "Add Staff Member"}
       >
-        <div className="space-y-5 pt-4">
+        <form action={handleCreateStaff} className="space-y-5 pt-4">
+          {error && (
+            <div className="p-3 text-sm text-coral bg-coral/10 rounded-md border border-coral/20">
+              {error}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-text-primary">Full Name</label>
-              <Input defaultValue={editingStaff?.name || ""} placeholder="e.g. Jane Doe" />
+              <Input name="fullName" defaultValue={editingStaff?.name || ""} placeholder="e.g. Jane Doe" required />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-text-primary">Staff ID</label>
-              <Input defaultValue={editingStaff?.staffId || ""} placeholder="e.g. EMP005" />
+              <label className="text-sm font-medium text-text-primary">Staff PIN</label>
+              <Input name="staffPin" defaultValue={editingStaff?.staffId || ""} placeholder="e.g. 1234" maxLength={4} />
             </div>
           </div>
           
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-primary">Email Address</label>
-            <Input type="email" defaultValue={editingStaff?.email || ""} placeholder="jane@cafehub.com" />
+            <Input name="email" type="email" defaultValue={editingStaff?.email || ""} placeholder="jane@cafehub.com" required />
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-primary">Role Assignment</label>
             <div className="text-xs text-text-secondary mb-2">Staff cannot choose roles; assigned by Admin only.</div>
-            <Select defaultValue={editingStaff?.role || "Waiter"}>
-              <option value="Admin">Admin</option>
-              <option value="Cashier">Cashier</option>
-              <option value="Waiter">Waiter</option>
-              <option value="Kitchen Staff">Kitchen Staff</option>
-            </Select>
+            <select name="role" defaultValue={editingStaff?.role || "waiter"} className="flex h-10 w-full rounded-md border border-border-warm bg-bg-surface px-3 py-2 text-sm ring-offset-bg-base file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-forest disabled:cursor-not-allowed disabled:opacity-50 text-text-primary shadow-sm" required>
+              <option value="admin">Admin</option>
+              <option value="cashier">Cashier</option>
+              <option value="waiter">Waiter</option>
+              <option value="kitchen">Kitchen Staff</option>
+            </select>
           </div>
 
           {editingStaff && (
@@ -223,15 +257,18 @@ export default function StaffPage() {
           {!editingStaff && (
             <div className="space-y-2">
               <label className="text-sm font-medium text-text-primary">Temporary Password</label>
-              <Input type="text" defaultValue="changeme123" />
+              <Input name="password" type="text" defaultValue="changeme123" required minLength={6} />
             </div>
           )}
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="ghost" onClick={handleCloseModal}>Cancel</Button>
-            <Button onClick={handleCloseModal}>Save Staff Member</Button>
+            <Button variant="ghost" type="button" onClick={handleCloseModal} disabled={loading}>Cancel</Button>
+            <Button type="submit" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingStaff ? "Save Staff Member" : "Create Staff Member"}
+            </Button>
           </div>
-        </div>
+        </form>
       </Modal>
 
     </div>

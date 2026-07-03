@@ -3,7 +3,9 @@ import * as React from "react";
 import { AdminSidebar } from "./admin-sidebar";
 import { AdminTopbar } from "./admin-topbar";
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+import { Database } from "@/types/supabase";
+
+export function AdminShell({ children, profile }: { children: React.ReactNode; profile?: Database['public']['Tables']['profiles']['Row'] }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   // Close mobile menu when screen size increases
@@ -29,12 +31,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 transform ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-200 ease-in-out`}>
-        <AdminSidebar />
+        <AdminSidebar profile={profile} />
       </div>
 
       {/* Main Content Area */}
       <div className="flex flex-col flex-1 min-w-0">
-        <AdminTopbar onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
+        <AdminTopbar profile={profile} onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
           {children}
         </main>

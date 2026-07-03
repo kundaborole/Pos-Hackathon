@@ -1,14 +1,17 @@
 "use client";
 import * as React from "react";
-import { Menu, Bell, User } from "lucide-react";
+import { Menu, Bell, User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Database } from "@/types/supabase";
+import { logoutAction } from "@/app/(auth)/actions";
 
 export interface AdminTopbarProps {
   onMenuToggle?: () => void;
   className?: string;
+  profile?: Database['public']['Tables']['profiles']['Row'];
 }
 
-export function AdminTopbar({ onMenuToggle, className }: AdminTopbarProps) {
+export function AdminTopbar({ onMenuToggle, className, profile }: AdminTopbarProps) {
   return (
     <header className={cn("h-16 flex items-center justify-between px-4 sm:px-6 bg-bg-surface border-b border-border-warm", className)}>
       <div className="flex items-center">
@@ -28,11 +31,22 @@ export function AdminTopbar({ onMenuToggle, className }: AdminTopbarProps) {
           <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-coral"></span>
           <span className="sr-only">Notifications</span>
         </button>
-        <button className="flex items-center space-x-2 p-1.5 rounded-full hover:bg-bg-secondary focus:outline-none focus:ring-2 focus:ring-primary-forest">
+        <div className="flex items-center space-x-3">
+          <div className="hidden sm:block text-right">
+            <p className="text-sm font-medium text-text-primary">{profile?.full_name || 'Staff'}</p>
+            <p className="text-xs text-text-secondary capitalize">{profile?.role || 'Guest'}</p>
+          </div>
           <div className="h-8 w-8 rounded-full bg-primary-green/20 text-primary-green flex items-center justify-center">
             <User className="h-4 w-4" />
           </div>
-        </button>
+          <button 
+            onClick={() => logoutAction()}
+            className="ml-2 p-2 rounded-md text-text-secondary hover:bg-coral/10 hover:text-coral transition-colors focus:outline-none focus:ring-2 focus:ring-coral/50"
+            title="Log Out"
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
+        </div>
       </div>
     </header>
   );
