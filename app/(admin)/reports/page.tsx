@@ -169,7 +169,8 @@ export default function ReportsPage() {
                   <Tooltip 
                     contentStyle={{ borderRadius: '8px', border: '1px solid #E7DFD2', backgroundColor: '#FFFDF8' }}
                     itemStyle={{ color: '#092F2A', fontWeight: 'bold' }}
-                    formatter={(value: number | string) => `₹${Number(value).toLocaleString()}`}
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    formatter={(value: any) => `₹${Number(value || 0).toLocaleString()}`}
                   />
                 </PieChart>
               </ResponsiveContainer>

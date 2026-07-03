@@ -46,8 +46,11 @@ export interface Product {
   categoryId: string;
   categoryName: string;
   price: number;
+  image?: string;
   availableForSale: boolean;
   sendToKitchen: boolean;
+  variants?: { id: string; name: string; additionalPrice: number }[];
+  addons?: { id: string; name: string; price: number }[];
 }
 
 export interface DetailedOrder extends Order {
