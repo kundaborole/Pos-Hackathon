@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { Database } from '@/types/supabase';
 import { cache } from 'react';
 
@@ -22,7 +22,7 @@ export type FullProduct = Product & {
 
 // Use React cache to deduplicate fetches within a single request
 export const getCategories = cache(async (restaurantId: string): Promise<CategoryWithProductCount[]> => {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('categories')
     .select('*, products(count)')
@@ -42,7 +42,7 @@ export const getCategories = cache(async (restaurantId: string): Promise<Categor
 });
 
 export const getProducts = cache(async (restaurantId: string): Promise<FullProduct[]> => {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('products')
     .select(`

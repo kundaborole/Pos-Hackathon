@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { Database } from '@/types/supabase';
 import { cache } from 'react';
 
@@ -10,7 +10,7 @@ export type FloorWithTables = Floor & {
 };
 
 export const getFloors = cache(async (restaurantId: string): Promise<FloorWithTables[]> => {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('floors')
     .select(`
@@ -38,7 +38,7 @@ export const getFloors = cache(async (restaurantId: string): Promise<FloorWithTa
 });
 
 export const getActiveFloors = cache(async (restaurantId: string): Promise<FloorWithTables[]> => {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('floors')
     .select(`
