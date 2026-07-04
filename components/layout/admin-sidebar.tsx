@@ -37,7 +37,8 @@ export function AdminSidebar({ className, profile }: { className?: string; profi
 
   return (
     <aside className={cn("flex flex-col w-64 bg-bg-surface border-r border-border-warm h-full", className)}>
-      <div className="h-16 flex items-center px-6 border-b border-border-warm">
+      <div className="h-16 flex items-center px-6 border-b border-border-warm gap-3">
+        <img src="/images/logo.png" alt="Cafe Hub Logo" className="h-8 w-8 rounded-md" />
         <h1 className="text-xl font-bold text-primary-forest tracking-tight">Cafe Hub</h1>
       </div>
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">

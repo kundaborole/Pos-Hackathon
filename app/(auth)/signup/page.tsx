@@ -33,7 +33,8 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg-base p-4 py-12">
       <Card className="w-full max-w-lg shadow-lg border-border-warm">
-        <CardHeader className="text-center pb-4">
+        <CardHeader className="text-center pb-4 flex flex-col items-center">
+          <img src="/images/logo.png" alt="Cafe Hub Logo" className="h-16 w-16 mb-4 rounded-xl shadow-sm" />
           <CardTitle className="text-2xl font-bold text-primary-forest">Register Restaurant</CardTitle>
           <p className="text-sm text-text-secondary mt-1">Set up your Cafe Hub workspace</p>
         </CardHeader>
