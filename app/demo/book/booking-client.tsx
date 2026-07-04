@@ -48,6 +48,22 @@ export default function BookingClient({
           </div>
         </div>
 
+        {/* Hackathon Demo Context Banner */}
+        <div className="bg-primary-forest/5 border-b border-primary-forest/10 p-4">
+          <div className="flex items-start gap-3">
+            <div className="bg-primary-forest text-white p-1.5 rounded-full mt-0.5 shrink-0">
+              <Users className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-primary-forest">Customer QR Ordering</h3>
+              <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                Imagine a customer just sat down and scanned a QR code on their table. 
+                <strong> Click any available table below</strong> to simulate scanning the code and entering the ordering flow.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Floor Selection */}
         <div className="px-4 py-4 bg-white border-b border-border-warm overflow-x-auto hide-scrollbar flex space-x-3 shadow-sm">
           {initialFloors.map(floor => (
