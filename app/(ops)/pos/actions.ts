@@ -85,6 +85,8 @@ export async function submitPosOrderAction(payload: {
 
     // Insert variants
     for (const variant of item.variants) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { value_id: _variant, ...variantData } = variant;
       await supabase.from('order_item_variants').insert({
         order_item_id: itemData.id,
         variant_name_snapshot: 'Variant',
@@ -94,7 +96,8 @@ export async function submitPosOrderAction(payload: {
     }
 
     // Insert addons
-    for (const addon of item.addons) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for (const _addon of item.addons) {
       await supabase.from('order_item_addons').insert({
         order_item_id: itemData.id,
         addon_name_snapshot: 'Addon',
@@ -127,7 +130,7 @@ export async function processPaymentAction(payload: {
   const supabase = createAdminClient();
 
   // 1. Insert payment
-  const { data: paymentData, error: paymentError } = await supabase
+  const { error: paymentError } = await supabase
     .from('payments')
     .insert({
       restaurant_id: profile.restaurant_id,

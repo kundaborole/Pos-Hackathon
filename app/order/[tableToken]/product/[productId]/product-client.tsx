@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+/* eslint-disable @next/next/no-img-element */
 import { useRouter } from "next/navigation";
 import { CustomerMobileShell } from "@/components/layout/customer-mobile-shell";
 import { ArrowLeft, Minus, Plus } from "lucide-react";

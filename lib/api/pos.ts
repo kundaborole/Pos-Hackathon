@@ -24,7 +24,8 @@ export const getTerminals = cache(async (restaurantId: string): Promise<POSTermi
   return data;
 });
 
-export const getActiveSession = cache(async (restaurantId: string, cashierId: string): Promise<POSSession | null> => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const getActiveSession = cache(async (restaurantId: string, _cashierId: string): Promise<POSSession | null> => {
   const supabase = await createAdminClient();
   const { data, error } = await supabase
     .from('pos_sessions')

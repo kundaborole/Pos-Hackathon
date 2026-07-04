@@ -11,8 +11,13 @@ import { Switch } from "@/components/ui/switch";
 import { MonitorSmartphone, Play, Square, MapPin, Plus, Loader2 } from "lucide-react";
 import { savePOSTerminalAction, openSessionAction, closeSessionAction } from "./actions";
 import { useRouter } from "next/navigation";
+import { Database } from "@/types/supabase";
 
-export default function TerminalsClient({ initialTerminals, cashiers = [], initialSessions = [] }: { initialTerminals: any[], cashiers?: any[], initialSessions?: any[] }) {
+type POSTerminal = Database['public']['Tables']['pos_terminals']['Row'] & { status?: string; lastClosingAmount?: number };
+type POSSession = Database['public']['Tables']['pos_sessions']['Row'] & { profiles?: { full_name: string } };
+type Profile = Database['public']['Tables']['profiles']['Row'];
+
+export default function TerminalsClient({ initialTerminals, cashiers = [], initialSessions = [] }: { initialTerminals: POSTerminal[], cashiers?: Profile[], initialSessions?: POSSession[] }) {
   const router = useRouter();
   
   const formattedTerminals = initialTerminals.map(t => ({
@@ -23,13 +28,21 @@ export default function TerminalsClient({ initialTerminals, cashiers = [], initi
   const [terminals, setTerminals] = React.useState(formattedTerminals);
   
   React.useEffect(() => {
-    setTerminals(formattedTerminals);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTerminals(prev => {
+      const newFormatted = initialTerminals.map(t => ({
+        ...t,
+        status: t.is_active ? 'online' : 'offline'
+      }));
+      return JSON.stringify(prev) !== JSON.stringify(newFormatted) ? newFormatted : prev;
+    });
   }, [initialTerminals]);
 
   const [sessions, setSessions] = React.useState(initialSessions);
   
   React.useEffect(() => {
-    setSessions(initialSessions);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSessions(prev => JSON.stringify(prev) !== JSON.stringify(initialSessions) ? initialSessions : prev);
   }, [initialSessions]);
   
   const [isTerminalModalOpen, setIsTerminalModalOpen] = React.useState(false);
@@ -181,7 +194,7 @@ export default function TerminalsClient({ initialTerminals, cashiers = [], initi
                       <div className="flex gap-2">
                         <Button 
                           className="flex-1 bg-white border-border-warm text-text-primary hover:bg-bg-secondary" 
-                          variant="outline"
+                          variant="secondary"
                           onClick={() => setCloseSessionTerminal(terminal)}
                         >
                           <Square className="mr-2 h-4 w-4" /> Close

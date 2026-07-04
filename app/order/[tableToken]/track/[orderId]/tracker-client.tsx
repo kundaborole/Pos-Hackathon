@@ -6,7 +6,7 @@ import { CustomerMobileShell } from "@/components/layout/customer-mobile-shell";
 import { Button } from "@/components/ui/button";
 import { Wifi, WifiOff, CheckCircle2, CircleDashed, Check, Bell, Receipt } from "lucide-react";
 import type { FullOrder } from "@/lib/api/orders";
-import { createClient } from "@/lib/supabase/client";
+
 import { cn } from "@/lib/utils";
 
 export default function OrderTrackerClient({
@@ -17,11 +17,9 @@ export default function OrderTrackerClient({
   tableToken: string;
 }) {
   const router = useRouter();
-  const [isOnline, setIsOnline] = React.useState(true);
+  const isOnline = true; // Hardcoded true for hackathon demo
 
   React.useEffect(() => {
-    setIsOnline(true);
-    
     // Fallback polling
     const interval = setInterval(() => {
       router.refresh();
@@ -41,7 +39,7 @@ export default function OrderTrackerClient({
     if (tableStatus === 'waiting_payment') return 4;
     
     // Kitchen completed, waiting for Waiter to serve
-    if (order.kitchen_status === 'completed' && order.order_status !== 'completed') return 3;
+    if (order.kitchen_status === 'completed' && order.order_status !== 'served') return 3;
     
     if (order.kitchen_status === 'preparing') return 2;
     if (order.kitchen_status === 'pending') return 1;

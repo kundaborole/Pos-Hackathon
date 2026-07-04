@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { CustomerMobileShell } from "@/components/layout/customer-mobile-shell";
 import { Search, ShoppingBag } from "lucide-react";

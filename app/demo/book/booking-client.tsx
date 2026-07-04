@@ -19,7 +19,7 @@ export default function BookingClient({
   const activeFloor = initialFloors.find(f => f.id === activeFloorId);
   const tables = activeFloor?.tables || [];
 
-  const handleTableClick = (table: any) => {
+  const handleTableClick = (table: FloorWithTables['tables'][number]) => {
     if (table.status === 'available') {
       router.push(`/qr/${table.qr_token}`);
     } else {
@@ -44,7 +44,7 @@ export default function BookingClient({
           </Link>
           <div>
             <h1 className="text-xl font-black text-text-primary">Select a Table</h1>
-            <div className="text-xs font-bold text-text-secondary">Choose where you'd like to sit</div>
+            <div className="text-xs font-bold text-text-secondary">Choose where you&apos;d like to sit</div>
           </div>
         </div>
 
@@ -74,7 +74,7 @@ export default function BookingClient({
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-4">
-              {tables.map((table: any) => {
+              {tables.map((table: FloorWithTables['tables'][number]) => {
                 const isAvailable = table.status === 'available';
                 return (
                   <button

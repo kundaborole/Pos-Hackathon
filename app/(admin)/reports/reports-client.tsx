@@ -32,7 +32,8 @@ export default function ReportsClient({ metrics }: { metrics: DashboardMetrics }
   const [period, setPeriod] = React.useState("today");
   const [isExporting, setIsExporting] = React.useState(false);
 
-  const handleExport = (type: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleExport = (_type: string) => {
     setIsExporting(true);
     setTimeout(() => setIsExporting(false), 1500);
   };

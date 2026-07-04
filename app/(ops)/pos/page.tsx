@@ -4,6 +4,7 @@ import { getActiveFloors } from '@/lib/api/floors';
 import { getActiveSession, getPendingOrders, getSessionPayments } from '@/lib/api/pos';
 import POSOrderClient from './pos-client';
 import CashierDashboardClient from './cashier-dashboard';
+import { Database } from '@/types/supabase';
 
 export default async function POSOrderPage({
   searchParams
@@ -19,7 +20,7 @@ export default async function POSOrderPage({
     ]);
     
     // Fetch payments for session if session is active
-    let sessionPayments: any[] = [];
+    let sessionPayments: Database['public']['Tables']['payments']['Row'][] = [];
     if (activeSession) {
       sessionPayments = await getSessionPayments(profile.restaurant_id, activeSession.id);
     }

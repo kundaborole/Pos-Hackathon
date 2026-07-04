@@ -45,9 +45,8 @@ export default function OrderDetailsClient({
       } else {
         setErrorMsg(res.error || "Failed to send to kitchen");
       }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (e: any) {
-      setErrorMsg(e.message || "An unexpected error occurred");
+    } catch (e: unknown) {
+      setErrorMsg((e as Error).message || "An unexpected error occurred");
     } finally {
       setIsSendingToKitchen(false);
     }
@@ -63,8 +62,8 @@ export default function OrderDetailsClient({
       } else {
         setErrorMsg(res.error || "Failed to process payment");
       }
-    } catch (e: any) {
-      setErrorMsg(e.message || "An unexpected error occurred");
+    } catch (e: unknown) {
+      setErrorMsg((e as Error).message || "An unexpected error occurred");
     } finally {
       setIsProcessingPayment(false);
     }

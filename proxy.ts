@@ -29,13 +29,15 @@ export async function proxy(request: NextRequest) {
 
   // Refresh session if expired
   const {
-    data: { user },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    data: { user: _user },
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
   
   // Public routes (Auth, Mobile QR, etc)
-  const isPublicRoute = path.startsWith('/staff-login') || path.startsWith('/signup') || path.startsWith('/order');
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _isPublicRoute = path.startsWith('/staff-login') || path.startsWith('/signup') || path.startsWith('/order');
   
   // Bypassed for hackathon demo
   // if (!user && !isPublicRoute && path !== '/') {

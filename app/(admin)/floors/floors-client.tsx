@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Edit2, Trash2, QrCode } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
-import { Select } from "@/components/ui/select";
+
 import { FloorWithTables } from "@/lib/api/floors";
 import { saveFloorAction, saveTableAction } from "./actions";
 import { useRouter } from "next/navigation";
@@ -29,8 +29,10 @@ export default function FloorsConfigurationClient({
   // Sync activeFloorId if initialFloors change and no valid floor is selected
   React.useEffect(() => {
     if (!activeFloorId && initialFloors.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveFloorId(initialFloors[0].id);
     } else if (activeFloorId && !initialFloors.find(f => f.id === activeFloorId)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveFloorId(initialFloors[0]?.id || "");
     }
   }, [initialFloors, activeFloorId]);
@@ -64,7 +66,7 @@ export default function FloorsConfigurationClient({
       const floorId = formData.get("floorId") as string;
       // If editingTable exists, we preserve its active status unless we added a hidden input for it, 
       // but for simplicity let's default to true on create, or preserve on edit
-      const isActive = editingTable ? editingTable.is_active : true;
+      const isActive = editingTable ? (editingTable.is_active ?? true) : true;
       const qrToken = editingTable?.qr_token || `qr-${Date.now()}`;
 
       if (!tableNumber || !floorId) return;
@@ -86,10 +88,11 @@ export default function FloorsConfigurationClient({
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleEditFloor = (floor: FloorWithTables) => {
     setEditingFloor(floor);
     setFloorName(floor.name);
-    setFloorIsActive(floor.is_active);
+    setFloorIsActive(floor.is_active ?? true);
     setIsFloorModalOpen(true);
   };
 

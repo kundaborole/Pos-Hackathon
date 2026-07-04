@@ -53,8 +53,8 @@ export default function ProductsClient({
       const category_id = formData.get("category_id") as string;
       const base_price = parseFloat(formData.get("base_price") as string) || 0;
       
-      const is_available = editingProduct ? editingProduct.is_available : true;
-      const send_to_kitchen = editingProduct ? editingProduct.send_to_kitchen : true;
+      const is_available = editingProduct ? (editingProduct.is_available ?? true) : true;
+      const send_to_kitchen = editingProduct ? (editingProduct.send_to_kitchen ?? true) : true;
 
       if (!name || !category_id) return;
 
@@ -130,6 +130,7 @@ export default function ProductsClient({
                 <TableCell>
                   <div className="h-10 w-10 rounded-md bg-bg-secondary flex items-center justify-center border border-border-warm overflow-hidden">
                     {product.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />
                     ) : (
                       <ImageIcon className="h-5 w-5 text-text-secondary opacity-50" />

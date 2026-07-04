@@ -46,7 +46,7 @@ export const validateTableSession = cache(async (publicToken: string): Promise<V
     return null;
   }
 
-  // @ts-ignore - relation typing
+  // @ts-expect-error - relation typing
   if (session.restaurants?.is_open === false) {
     return null;
   }
@@ -55,13 +55,13 @@ export const validateTableSession = cache(async (publicToken: string): Promise<V
     restaurant_id: session.restaurant_id,
     table_id: session.table_id,
     public_token: session.public_token,
-    // @ts-ignore - relation typing
+    // @ts-expect-error - relation typing
     restaurant_name: session.restaurants?.name,
-    // @ts-ignore - relation typing
+    // @ts-expect-error - relation typing
     table_number: session.restaurant_tables?.table_number,
-    // @ts-ignore - relation typing
+    // @ts-expect-error - relation typing
     floor_name: session.restaurant_tables?.floors?.name || 'Main Floor',
-    // @ts-ignore - relation typing
+    // @ts-expect-error - relation typing
     capacity: session.restaurant_tables?.capacity || 4
   };
 });

@@ -5,11 +5,10 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/data-table";
 import { Activity, TrendingUp, TrendingDown, UtensilsCrossed, CheckCircle2 } from "lucide-react";
 import { getDashboardMetrics } from "@/lib/api/metrics";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+
 
 export default async function DashboardPage() {
-  const profile = { restaurant_id: '11111111-1111-1111-1111-111111111111' };
+  const profile = { restaurant_id: process.env.NEXT_PUBLIC_RESTAURANT_ID || '11111111-1111-1111-1111-111111111111' };
 
   const metrics = await getDashboardMetrics(profile.restaurant_id);
 
@@ -91,7 +90,7 @@ export default async function DashboardPage() {
                     <TableCell className="font-medium">{order.order_number}</TableCell>
                     <TableCell>{order.table}</TableCell>
                     <TableCell>
-                      <StatusBadge status={order.status as any} />
+                      <StatusBadge status={order.status as "success" | "inactive" | "preparing"} />
                     </TableCell>
                     <TableCell className="text-text-secondary">{order.time}</TableCell>
                     <TableCell className="text-right">₹{order.total.toFixed(2)}</TableCell>

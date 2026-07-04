@@ -6,11 +6,11 @@ import { OperationalHeader } from "@/components/layout/operational-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, ChevronRight, Menu, Users, Clock } from "lucide-react";
+import { Search, ChevronRight, Menu, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FloorWithTables } from "@/lib/api/floors";
 import { Database } from "@/types/supabase";
-import { createClient } from "@/lib/supabase/client";
+
 import { useRouter } from "next/navigation";
 import { updateTableStatusAction } from "./actions";
 

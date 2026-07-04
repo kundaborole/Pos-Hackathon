@@ -10,7 +10,7 @@ import { Modal } from "@/components/ui/modal";
 import { Database } from "@/types/supabase";
 import { 
   Receipt, CreditCard, Banknote, QrCode, 
-  Search, CheckCircle2, AlertCircle, Loader2, X
+  Search, CheckCircle2, AlertCircle, Loader2
 } from "lucide-react";
 import { processPaymentAction, closeRegisterAction } from "./actions";
 
@@ -39,8 +39,7 @@ export default function CashierDashboardClient({
   const [successMsg, setSuccessMsg] = React.useState<string | null>(null);
   
   // Cash Payment State
-  const [cashReceived, setCashReceived] = React.useState<string>("");
-  
+  // (Removed unused cashReceived state)
   // Close Register State
   const [isCloseModalOpen, setIsCloseModalOpen] = React.useState(false);
   const [countedCash, setCountedCash] = React.useState<string>("");
@@ -82,7 +81,6 @@ export default function CashierDashboardClient({
     setTimeout(() => {
       setSelectedOrder(null);
       setSuccessMsg(null);
-      setCashReceived("");
       router.refresh();
     }, 2000);
   };
@@ -133,7 +131,7 @@ export default function CashierDashboardClient({
         actions={
           <div className="flex items-center space-x-4 text-white">
             <span className="text-sm">Cashier: <b>{profileName}</b></span>
-            <Button variant="outline" className="text-white border-white/20 hover:bg-white/10" onClick={() => setIsCloseModalOpen(true)}>
+            <Button variant="secondary" className="text-white border-white/20 hover:bg-white/10" onClick={() => setIsCloseModalOpen(true)}>
               Close Register
             </Button>
           </div>
@@ -255,7 +253,7 @@ export default function CashierDashboardClient({
                 <div className="space-y-4">
                   <div className="grid grid-cols-3 gap-3">
                     <Button 
-                      variant="outline" 
+                      variant="secondary" 
                       className="h-auto py-4 flex flex-col items-center gap-2 border-2 hover:border-primary-green hover:text-primary-green"
                       onClick={() => handleProcessPayment('cash')}
                       disabled={isProcessing}
@@ -264,7 +262,7 @@ export default function CashierDashboardClient({
                       <span>Cash</span>
                     </Button>
                     <Button 
-                      variant="outline" 
+                      variant="secondary" 
                       className="h-auto py-4 flex flex-col items-center gap-2 border-2 hover:border-ready-blue hover:text-ready-blue"
                       onClick={() => handleProcessPayment('card')}
                       disabled={isProcessing}
@@ -273,7 +271,7 @@ export default function CashierDashboardClient({
                       <span>Card</span>
                     </Button>
                     <Button 
-                      variant="outline" 
+                      variant="secondary" 
                       className="h-auto py-4 flex flex-col items-center gap-2 border-2 hover:border-brand-purple hover:text-brand-purple"
                       onClick={() => handleProcessPayment('upi')}
                       disabled={isProcessing}
@@ -349,7 +347,7 @@ export default function CashierDashboardClient({
           )}
 
           <div className="flex justify-end space-x-3 pt-4 border-t border-border-warm">
-            <Button variant="outline" onClick={() => setIsCloseModalOpen(false)} disabled={isProcessing}>Cancel</Button>
+            <Button variant="secondary" onClick={() => setIsCloseModalOpen(false)} disabled={isProcessing}>Cancel</Button>
             <Button onClick={handleCloseRegister} disabled={isProcessing || !countedCash} className="bg-coral hover:bg-coral/90">
               {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Confirm Close

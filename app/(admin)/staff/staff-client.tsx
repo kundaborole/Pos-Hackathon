@@ -9,13 +9,13 @@ import { Modal } from "@/components/ui/modal";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Search, Filter, Loader2, Edit2, ShieldAlert, RotateCcw } from "lucide-react";
-import { MOCK_STAFF, StaffMember } from "@/lib/mock-data";
+import { Plus, Search, Loader2, Edit2, ShieldAlert, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createStaffAccount } from "./actions";
 import { useRouter } from "next/navigation";
 
-export default function StaffClient({ initialStaff }: { initialStaff: any[] }) {
+import { Database } from "@/types/supabase";
+export default function StaffClient({ initialStaff }: { initialStaff: Database['public']['Tables']['profiles']['Row'][] }) {
   const router = useRouter();
 
   const formattedStaff = initialStaff.map(s => ({
@@ -27,17 +27,21 @@ export default function StaffClient({ initialStaff }: { initialStaff: any[] }) {
     status: s.is_active ? 'active' : 'inactive'
   }));
 
+  type FormattedStaff = typeof formattedStaff[0];
+
   const [staffList, setStaffList] = React.useState(formattedStaff);
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStaffList(formattedStaff);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStaff]);
   
   const [searchQuery, setSearchQuery] = React.useState("");
   const [roleFilter, setRoleFilter] = React.useState("ALL");
   
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [editingStaff, setEditingStaff] = React.useState<StaffMember | null>(null);
+  const [editingStaff, setEditingStaff] = React.useState<FormattedStaff | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -48,7 +52,7 @@ export default function StaffClient({ initialStaff }: { initialStaff: any[] }) {
     return matchesSearch && matchesRole;
   });
 
-  const handleEdit = (member: StaffMember) => {
+  const handleEdit = (member: FormattedStaff) => {
     setEditingStaff(member);
     setIsModalOpen(true);
   };
@@ -136,10 +140,10 @@ export default function StaffClient({ initialStaff }: { initialStaff: any[] }) {
                 </thead>
                 <tbody>
                   {filteredStaff.map((member) => (
-                    <tr key={member.id} className={cn("border-b border-border-warm hover:bg-bg-secondary/50", member.accountStatus === 'Inactive' && "opacity-50 grayscale")}>
+                    <tr key={member.id} className={cn("border-b border-border-warm hover:bg-bg-secondary/50", member.status === 'inactive' && "opacity-50 grayscale")}>
                       <td className="px-4 py-3">
                         <div className="font-bold text-text-primary">{member.name}</div>
-                        <div className="text-xs text-text-secondary">{member.email} • {member.staffId}</div>
+                        <div className="text-xs text-text-secondary">{member.email} • {member.pin}</div>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded text-xs font-bold border ${getRoleBadgeStyle(member.role)}`}>
@@ -147,12 +151,12 @@ export default function StaffClient({ initialStaff }: { initialStaff: any[] }) {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-text-secondary">
-                        {member.assignedTerminal || member.assignedStation || "Floating"}
+                        {"Floating"}
                       </td>
                       <td className="px-4 py-3">
                         <StatusBadge 
-                          status={member.shiftStatus === 'Active' ? 'success' : 'inactive'} 
-                          label={member.shiftStatus} 
+                          status={member.status === 'inactive' ? 'inactive' : 'success'} 
+                          label={member.status === 'inactive' ? 'Offline' : 'Active'} 
                         />
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -225,7 +229,7 @@ export default function StaffClient({ initialStaff }: { initialStaff: any[] }) {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-text-primary">Staff PIN</label>
-              <Input name="staffPin" defaultValue={editingStaff?.staffId || ""} placeholder="e.g. 1234" maxLength={4} />
+              <Input name="staffPin" defaultValue={editingStaff?.pin || ""} placeholder="e.g. 1234" maxLength={4} />
             </div>
           </div>
           
@@ -251,7 +255,7 @@ export default function StaffClient({ initialStaff }: { initialStaff: any[] }) {
                 <div className="text-sm font-medium text-text-primary">Account Status</div>
                 <div className="text-xs text-text-secondary">Disable to prevent login</div>
               </div>
-              <Switch checked={editingStaff.accountStatus === 'Active'} readOnly />
+              <Switch checked={editingStaff.status === 'active'} readOnly />
             </div>
           )}
 

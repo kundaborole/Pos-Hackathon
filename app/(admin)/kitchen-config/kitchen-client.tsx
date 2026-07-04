@@ -9,11 +9,15 @@ import { Modal } from "@/components/ui/modal";
 import { Switch } from "@/components/ui/switch";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Plus, Edit2, ChefHat, Loader2 } from "lucide-react";
-import { MOCK_KITCHEN_STATIONS, KitchenStation } from "@/lib/mock-data";
+
 import { saveKitchenStationAction } from "./actions";
 import { useRouter } from "next/navigation";
 
-export default function KitchenClient({ initialStations, allCategories }: { initialStations: any[], allCategories: any[] }) {
+import { Database } from "@/types/supabase";
+type Station = Database['public']['Tables']['kitchen_stations']['Row'] & { active?: boolean | null; categories: string[] };
+type Category = Database['public']['Tables']['categories']['Row'];
+
+export default function KitchenClient({ initialStations, allCategories }: { initialStations: Station[], allCategories: Category[] }) {
   const router = useRouter();
   
   const formattedStations = initialStations.map(s => ({
@@ -24,18 +28,20 @@ export default function KitchenClient({ initialStations, allCategories }: { init
   const [stations, setStations] = React.useState(formattedStations);
 
   React.useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStations(formattedStations);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStations]);
 
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [editingStation, setEditingStation] = React.useState<any | null>(null);
+  const [editingStation, setEditingStation] = React.useState<Station | null>(null);
   
   // Track selected categories in form
   const [selectedCategoryIds, setSelectedCategoryIds] = React.useState<string[]>([]);
 
   const [isPending, startTransition] = React.useTransition();
 
-  const handleEdit = (station: any) => {
+  const handleEdit = (station: Station) => {
     setEditingStation(station);
     // Find category IDs that belong to this station
     const assignedIds = allCategories
@@ -54,7 +60,7 @@ export default function KitchenClient({ initialStations, allCategories }: { init
   const handleSaveStation = async (formData: FormData) => {
     startTransition(async () => {
       const name = formData.get("name") as string;
-      const is_active = editingStation ? editingStation.active : true;
+      const is_active = editingStation ? (editingStation.active ?? true) : true;
 
       if (!name) return;
 
@@ -169,7 +175,7 @@ export default function KitchenClient({ initialStations, allCategories }: { init
               <div className="text-sm font-medium text-text-primary">Active Status</div>
               <div className="text-xs text-text-secondary">Route tickets to this station</div>
             </div>
-            <Switch checked={editingStation ? editingStation.active : true} readOnly />
+            <Switch checked={editingStation ? (editingStation.active ?? true) : true} readOnly />
           </div>
 
           <div className="flex justify-end space-x-2 pt-4 border-t border-border-warm mt-4">

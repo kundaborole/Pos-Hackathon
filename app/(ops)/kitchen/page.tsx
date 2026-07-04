@@ -13,6 +13,6 @@ export default async function KitchenPage() {
   return <KitchenClient 
     initialTickets={tickets} 
     stations={stations} 
-    restaurantId={profile.restaurant_id} 
+    _restaurantId={profile.restaurant_id} 
   />;
 }

@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
 import { Database } from '@/types/supabase';
-import { redirect } from 'next/navigation';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -35,7 +34,7 @@ export async function requireAuth(): Promise<Profile> {
   // Bypassed for hackathon demo — uses a real admin profile from the DB
   return {
     id: '87935d5b-1e15-4e0b-a243-7c433633bb89',
-    restaurant_id: '11111111-1111-1111-1111-111111111111',
+    restaurant_id: process.env.NEXT_PUBLIC_RESTAURANT_ID || '11111111-1111-1111-1111-111111111111',
     full_name: 'Admin User',
     email: 'admin@cafehub.com',
     role: 'admin',
@@ -49,7 +48,8 @@ export async function requireAuth(): Promise<Profile> {
 /**
  * Redirects if the user does not have one of the required roles.
  */
-export async function requireRole(allowedRoles: Database['public']['Enums']['staff_role'][]) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function requireRole(_allowedRoles: Database['public']['Enums']['staff_role'][]) {
   const profile = await requireAuth();
 
   // Bypassed for hackathon demo

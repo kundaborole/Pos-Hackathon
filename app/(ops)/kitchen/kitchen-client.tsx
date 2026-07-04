@@ -8,30 +8,28 @@ import { cn } from "@/lib/utils";
 import { Select } from "@/components/ui/select";
 import { KitchenStation, KitchenTicket, KitchenTicketItem } from "@/lib/api/kitchen";
 import { updateOrderItemStatusAction, updateOrderKitchenStatusAction } from "./actions";
-import { createClient } from "@/lib/supabase/client";
+
 import { useRouter } from "next/navigation";
 
 export default function KitchenClient({
   initialTickets,
   stations,
-  restaurantId
+  _restaurantId
 }: {
   initialTickets: KitchenTicket[];
   stations: KitchenStation[];
-  restaurantId: string;
+  _restaurantId: string;
 }) {
   const router = useRouter();
   const [tickets, setTickets] = React.useState<KitchenTicket[]>(initialTickets);
   const [activeStation, setActiveStation] = React.useState("ALL");
-  const [isOnline, setIsOnline] = React.useState(true);
+  const isOnline = true; // Hardcoded true for hackathon demo
   const [isRefreshing, setIsRefreshing] = React.useState(false);
   const [processingItems, setProcessingItems] = React.useState<Set<string>>(new Set());
   const [processingOrders, setProcessingOrders] = React.useState<Set<string>>(new Set());
 
   // Setup Robust Polling
   React.useEffect(() => {
-    setIsOnline(true);
-    
     const interval = setInterval(() => {
       if (!isRefreshing) {
         router.refresh();

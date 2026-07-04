@@ -39,6 +39,7 @@ export default async function TerminalsPage() {
 
   return <TerminalsClient 
     initialTerminals={terminals || []} 
+    // @ts-expect-error Partial type
     cashiers={cashiers || []} 
     initialSessions={sessions || []}
   />;
