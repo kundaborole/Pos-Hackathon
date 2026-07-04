@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuth } from "@/lib/auth";
 
 export async function updateTableStatusAction(tableId: string, status: string) {
@@ -10,7 +10,7 @@ export async function updateTableStatusAction(tableId: string, status: string) {
     throw new Error('Unauthorized role for this action');
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { error } = await supabase
     .from('restaurant_tables')
