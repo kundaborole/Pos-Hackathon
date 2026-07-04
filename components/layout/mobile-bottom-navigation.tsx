@@ -20,7 +20,7 @@ export function MobileBottomNavigation({ tableToken }: MobileBottomNavigationPro
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-bg-surface border-t border-border-warm pb-safe">
-      <nav className="flex justify-around items-center h-16 max-w-[430px] mx-auto">
+      <nav className="flex justify-around items-center h-16 w-full px-4">
         {navItems.map((item) => {
           const isActive = pathname.includes(item.href) || (item.name === "Menu" && pathname === `/order/${tableToken}`);
           return (

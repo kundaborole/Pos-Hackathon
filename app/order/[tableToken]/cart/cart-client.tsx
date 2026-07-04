@@ -152,7 +152,7 @@ export default function CartClient({ session }: { session: ValidatedSession }) {
 
         {/* Place Order CTA */}
         {items.length > 0 && (
-          <div className="fixed bottom-[65px] left-0 right-0 z-50 max-w-[430px] mx-auto bg-white border-t border-border-warm p-4 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <div className="fixed bottom-[65px] left-0 right-0 z-50 w-full bg-white border-t border-border-warm p-4 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
             <Button 
               className="w-full h-14 text-lg shadow-md font-black"
               onClick={handlePlaceOrder}
