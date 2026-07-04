@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { Database } from '@/types/supabase';
 import { cache } from 'react';
 
@@ -24,13 +25,14 @@ export const getTerminals = cache(async (restaurantId: string): Promise<POSTermi
 });
 
 export const getActiveSession = cache(async (restaurantId: string, cashierId: string): Promise<POSSession | null> => {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   const { data, error } = await supabase
     .from('pos_sessions')
     .select('*')
     .eq('restaurant_id', restaurantId)
-    .eq('cashier_id', cashierId)
     .eq('status', 'open')
+    .order('created_at', { ascending: false })
+    .limit(1)
     .single();
 
   if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows found"

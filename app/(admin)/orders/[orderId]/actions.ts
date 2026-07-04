@@ -1,7 +1,8 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuth } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 export async function sendOrderToKitchenAction(orderId: string) {
   const profile = await requireAuth();
@@ -10,7 +11,7 @@ export async function sendOrderToKitchenAction(orderId: string) {
     throw new Error('Unauthorized role for this action');
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Validate order belongs to restaurant
   const { data: order, error: orderErr } = await supabase
@@ -75,5 +76,60 @@ export async function sendOrderToKitchenAction(orderId: string) {
       .eq('id', order.table_id);
   }
 
+  return { success: true };
+}
+
+export async function takePaymentAction(orderId: string) {
+  const profile = await requireAuth();
+
+  const supabase = createAdminClient();
+
+  // Get order details
+  const { data: order, error: orderErr } = await supabase
+    .from('orders')
+    .select('id, total_amount, table_id')
+    .eq('id', orderId)
+    .eq('restaurant_id', profile.restaurant_id)
+    .single();
+
+  if (orderErr || !order) {
+    return { success: false, error: 'Order not found' };
+  }
+
+  // Insert payment
+  const { error: payError } = await supabase
+    .from('payments')
+    .insert({
+      restaurant_id: profile.restaurant_id,
+      order_id: orderId,
+      amount: order.total_amount || 0,
+      payment_method: 'cash',
+      status: 'paid',
+      paid_at: new Date().toISOString()
+    });
+
+  if (payError) {
+    return { success: false, error: payError.message };
+  }
+
+  // Update order
+  await supabase
+    .from('orders')
+    .update({
+      payment_status: 'paid',
+      order_status: 'completed',
+      completed_at: new Date().toISOString()
+    })
+    .eq('id', orderId);
+
+  // Free table
+  if (order.table_id) {
+    await supabase
+      .from('restaurant_tables')
+      .update({ status: 'available' })
+      .eq('id', order.table_id);
+  }
+
+  revalidatePath(`/orders/${orderId}`);
   return { success: true };
 }

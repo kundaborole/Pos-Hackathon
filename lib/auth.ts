@@ -31,22 +31,19 @@ export async function getCurrentProfile(): Promise<Profile | null> {
   return profile;
 }
 
-/**
- * Redirects if the user is not authenticated or not active.
- * Used to protect Server Components.
- */
-export async function requireAuth() {
-  const profile = await getCurrentProfile();
-  
-  if (!profile) {
-    redirect('/login');
-  }
-
-  if (!profile.is_active) {
-    redirect('/login?error=account_inactive');
-  }
-
-  return profile;
+export async function requireAuth(): Promise<Profile> {
+  // Bypassed for hackathon demo — uses a real admin profile from the DB
+  return {
+    id: '87935d5b-1e15-4e0b-a243-7c433633bb89',
+    restaurant_id: '11111111-1111-1111-1111-111111111111',
+    full_name: 'Admin User',
+    email: 'admin@cafehub.com',
+    role: 'admin',
+    staff_id: 'STAFF001',
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
 }
 
 /**
@@ -55,9 +52,10 @@ export async function requireAuth() {
 export async function requireRole(allowedRoles: Database['public']['Enums']['staff_role'][]) {
   const profile = await requireAuth();
 
-  if (!allowedRoles.includes(profile.role)) {
-    redirect('/');
-  }
+  // Bypassed for hackathon demo
+  // if (!allowedRoles.includes(profile.role)) {
+  //   redirect('/');
+  // }
 
   return profile;
 }

@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuth } from "@/lib/auth";
 import TerminalsClient from "./terminals-client";
 
+export const dynamic = 'force-dynamic';
+
 export default async function TerminalsPage() {
   const supabase = createAdminClient();
   const profile = await requireAuth();
@@ -16,6 +18,28 @@ export default async function TerminalsPage() {
     console.error("Error fetching terminals:", error);
   }
 
-  // We are currently mocking sessions
-  return <TerminalsClient initialTerminals={terminals || []} />;
+  const { data: cashiers, error: cashiersError } = await supabase
+    .from("profiles")
+    .select("id, full_name, staff_id")
+    .eq("restaurant_id", profile.restaurant_id)
+    .eq("role", "cashier");
+
+  if (cashiersError) {
+    console.error("Error fetching cashiers:", cashiersError);
+  }
+
+  const { data: sessions, error: sessionsError } = await supabase
+    .from("pos_sessions")
+    .select("*, profiles:cashier_id(full_name)")
+    .eq("restaurant_id", profile.restaurant_id);
+
+  if (sessionsError) {
+    console.error("Error fetching sessions:", sessionsError);
+  }
+
+  return <TerminalsClient 
+    initialTerminals={terminals || []} 
+    cashiers={cashiers || []} 
+    initialSessions={sessions || []}
+  />;
 }

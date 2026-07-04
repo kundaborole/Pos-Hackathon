@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { FullOrder } from "@/lib/api/orders";
-import { sendOrderToKitchenAction } from "./actions";
+import { sendOrderToKitchenAction, takePaymentAction } from "./actions";
 
 export default function OrderDetailsClient({
   order
@@ -17,6 +17,7 @@ export default function OrderDetailsClient({
 }) {
   const router = useRouter();
   const [isSendingToKitchen, setIsSendingToKitchen] = React.useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
   if (!order) {
@@ -52,6 +53,23 @@ export default function OrderDetailsClient({
     }
   };
 
+  const handleTakePayment = async () => {
+    setIsProcessingPayment(true);
+    setErrorMsg(null);
+    try {
+      const res = await takePaymentAction(order.id);
+      if (res.success) {
+        router.refresh();
+      } else {
+        setErrorMsg(res.error || "Failed to process payment");
+      }
+    } catch (e: any) {
+      setErrorMsg(e.message || "An unexpected error occurred");
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
   const getOrderStatus = () => {
     if (order.kitchen_status === 'pending') return 'Pending';
     if (order.kitchen_status === 'preparing') return 'Preparing';
@@ -79,7 +97,7 @@ export default function OrderDetailsClient({
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-text-primary tracking-tight">Order {order.order_number}</h1>
-            <p className="text-sm text-text-secondary">Created at {new Date(order.created_at).toLocaleString()}</p>
+            <p className="text-sm text-text-secondary" suppressHydrationWarning>Created at {new Date(order.created_at).toLocaleString()}</p>
           </div>
         </div>
         <div className="flex space-x-2">
@@ -154,9 +172,14 @@ export default function OrderDetailsClient({
                 <Button className="bg-primary-green hover:bg-primary-hover"><CheckCircle className="h-4 w-4 mr-2" /> Mark Served</Button>
               )}
               {order.payment_status === 'unpaid' && (
-                <Link href={`/payment/${order.id}`}>
-                  <Button className="bg-ready-blue hover:bg-ready-blue/90"><CreditCard className="h-4 w-4 mr-2" /> Take Payment</Button>
-                </Link>
+                <Button 
+                  className="bg-ready-blue hover:bg-ready-blue/90"
+                  onClick={handleTakePayment}
+                  disabled={isProcessingPayment}
+                >
+                  <CreditCard className="h-4 w-4 mr-2" /> 
+                  {isProcessingPayment ? "Processing..." : "Take Payment"}
+                </Button>
               )}
               <Button variant="destructive" className="ml-auto" disabled><XCircle className="h-4 w-4 mr-2" /> Cancel</Button>
             </CardContent>

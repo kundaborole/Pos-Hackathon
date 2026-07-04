@@ -9,11 +9,10 @@ import { Modal } from "@/components/ui/modal";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Switch } from "@/components/ui/switch";
 import { MonitorSmartphone, Play, Square, MapPin, Plus, Loader2 } from "lucide-react";
-import { MOCK_POS_TERMINALS, MOCK_POS_SESSION_SUMMARIES, POSTerminal } from "@/lib/mock-data";
-import { savePOSTerminalAction } from "./actions";
+import { savePOSTerminalAction, openSessionAction, closeSessionAction } from "./actions";
 import { useRouter } from "next/navigation";
 
-export default function TerminalsClient({ initialTerminals }: { initialTerminals: any[] }) {
+export default function TerminalsClient({ initialTerminals, cashiers = [], initialSessions = [] }: { initialTerminals: any[], cashiers?: any[], initialSessions?: any[] }) {
   const router = useRouter();
   
   const formattedTerminals = initialTerminals.map(t => ({
@@ -27,7 +26,11 @@ export default function TerminalsClient({ initialTerminals }: { initialTerminals
     setTerminals(formattedTerminals);
   }, [initialTerminals]);
 
-  const [sessions, setSessions] = React.useState(MOCK_POS_SESSION_SUMMARIES);
+  const [sessions, setSessions] = React.useState(initialSessions);
+  
+  React.useEffect(() => {
+    setSessions(initialSessions);
+  }, [initialSessions]);
   
   const [isTerminalModalOpen, setIsTerminalModalOpen] = React.useState(false);
   const [editingTerminal, setEditingTerminal] = React.useState<POSTerminal | null>(null);
@@ -36,20 +39,56 @@ export default function TerminalsClient({ initialTerminals }: { initialTerminals
   const [openSessionTerminal, setOpenSessionTerminal] = React.useState<POSTerminal | null>(null);
   const [closeSessionTerminal, setCloseSessionTerminal] = React.useState<POSTerminal | null>(null);
 
-  const handleOpenSession = (terminalId: string) => {
-    // mock behavior
-    setSessions(prev => [
-      ...prev,
-      { id: `SES-${Math.floor(Math.random()*1000)}`, terminalId, cashier: "Demo User", status: "open", openedAt: "Just now" }
-    ]);
-    setTerminals(prev => prev.map(t => t.id === terminalId ? { ...t, currentSessionId: `SES-new` } : t));
-    setOpenSessionTerminal(null);
+  const handleOpenSession = async (formData: FormData) => {
+    startTransition(async () => {
+      if (!openSessionTerminal) return;
+      const cashier_id = formData.get("cashier_id") as string;
+      const opening_cash = parseFloat(formData.get("opening_cash") as string) || 0;
+
+      if (!cashier_id) {
+        alert("Please select a cashier");
+        return;
+      }
+
+      const res = await openSessionAction({
+        terminal_id: openSessionTerminal.id,
+        cashier_id,
+        opening_cash
+      });
+
+      if (res.success) {
+        setOpenSessionTerminal(null);
+        router.refresh();
+      } else {
+        alert("Failed to open session: " + res.error);
+      }
+    });
   };
 
-  const handleCloseSession = (terminalId: string) => {
-    setSessions(prev => prev.map(s => s.terminalId === terminalId && s.status === 'open' ? { ...s, status: 'closed', closedAt: "Just now" } : s));
-    setTerminals(prev => prev.map(t => t.id === terminalId ? { ...t, currentSessionId: undefined, lastClosingAmount: 1250.00 } : t));
-    setCloseSessionTerminal(null);
+  const handleCloseSession = async (formData: FormData) => {
+    startTransition(async () => {
+      if (!closeSessionTerminal) return;
+      const activeSession = sessions.find(s => s.terminal_id === closeSessionTerminal.id && s.status === 'open');
+      if (!activeSession) return;
+
+      const counted_cash = parseFloat(formData.get("counted_cash") as string) || 0;
+      const closing_notes = formData.get("closing_notes") as string;
+      const expected_cash = activeSession.opening_cash || 0; // In reality, add sales to this
+
+      const res = await closeSessionAction({
+        session_id: activeSession.id,
+        expected_cash,
+        counted_cash,
+        closing_notes
+      });
+
+      if (res.success) {
+        setCloseSessionTerminal(null);
+        router.refresh();
+      } else {
+        alert("Failed to close session: " + res.error);
+      }
+    });
   };
 
   const handleCloseTerminalModal = () => {
@@ -95,7 +134,7 @@ export default function TerminalsClient({ initialTerminals }: { initialTerminals
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {terminals.map(terminal => {
-          const activeSession = sessions.find(s => s.terminalId === terminal.id && s.status === 'open');
+          const activeSession = sessions.find(s => s.terminal_id === terminal.id && s.status === 'open');
 
           return (
             <Card key={terminal.id} className="border border-border-warm bg-bg-surface overflow-hidden">
@@ -128,25 +167,29 @@ export default function TerminalsClient({ initialTerminals }: { initialTerminals
                         </div>
                         <div className="text-sm font-medium text-text-primary">{activeSession.id}</div>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                      <div className="text-text-secondary mb-4">Register is currently open.</div>
+                      <div className="grid grid-cols-2 gap-4 mb-4 text-sm text-left">
                         <div>
                           <div className="text-text-secondary">Cashier</div>
-                          <div className="font-medium text-text-primary">{activeSession.cashier}</div>
+                          <div className="font-medium text-text-primary">{activeSession.profiles?.full_name || 'Unknown'}</div>
                         </div>
                         <div>
                           <div className="text-text-secondary">Opened At</div>
-                          <div className="font-medium text-text-primary">{activeSession.openedAt}</div>
+                          <div className="font-medium text-text-primary" suppressHydrationWarning>{new Date(activeSession.opened_at).toLocaleTimeString()}</div>
                         </div>
                       </div>
-                      
-                      <Button 
-                        variant="destructive" 
-                        className="w-full font-bold"
-                        onClick={() => setCloseSessionTerminal(terminal)}
-                      >
-                        <Square className="mr-2 h-4 w-4" /> Close Register
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          className="flex-1 bg-white border-border-warm text-text-primary hover:bg-bg-secondary" 
+                          variant="outline"
+                          onClick={() => setCloseSessionTerminal(terminal)}
+                        >
+                          <Square className="mr-2 h-4 w-4" /> Close
+                        </Button>
+                        <Button className="flex-1 bg-ready-blue hover:bg-ready-blue/90 text-white" onClick={() => router.push('/pos')}>
+                          <MonitorSmartphone className="mr-2 h-4 w-4" /> Enter POS
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     <div className="bg-bg-secondary/50 border border-border-warm rounded-lg p-4 text-center">
@@ -213,24 +256,42 @@ export default function TerminalsClient({ initialTerminals }: { initialTerminals
         onClose={() => setOpenSessionTerminal(null)} 
         title={`Open Register: ${openSessionTerminal?.name}`}
       >
-        <div className="space-y-4 pt-4">
+        <form action={handleOpenSession} className="space-y-4 pt-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-primary">Cashier Name</label>
-            <Input placeholder="Enter your name or ID" />
+            <select 
+              name="cashier_id"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              defaultValue=""
+              required
+            >
+              <option value="" disabled>Select a cashier...</option>
+              {cashiers.map((cashier) => (
+                <option key={cashier.id} value={cashier.id}>
+                  {cashier.full_name} ({cashier.staff_id})
+                </option>
+              ))}
+              {cashiers.length === 0 && (
+                <option value="" disabled>No cashiers found. Please add a cashier.</option>
+              )}
+            </select>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-primary">Opening Cash (₹)</label>
-            <Input type="number" defaultValue="500" />
+            <Input name="opening_cash" type="number" defaultValue="500" required />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-primary">Notes (Optional)</label>
-            <Input placeholder="Any opening remarks..." />
+            <Input name="opening_notes" placeholder="Any opening remarks..." />
           </div>
           <div className="flex justify-end space-x-2 pt-4 border-t border-border-warm mt-4">
-            <Button variant="ghost" onClick={() => setOpenSessionTerminal(null)}>Cancel</Button>
-            <Button className="bg-ready-blue hover:bg-ready-blue/90" onClick={() => openSessionTerminal && handleOpenSession(openSessionTerminal.id)}>Start Session</Button>
+            <Button type="button" variant="ghost" onClick={() => setOpenSessionTerminal(null)} disabled={isPending}>Cancel</Button>
+            <Button type="submit" className="bg-ready-blue hover:bg-ready-blue/90" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Start Session
+            </Button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       {/* Close Session Modal */}
@@ -239,44 +300,29 @@ export default function TerminalsClient({ initialTerminals }: { initialTerminals
         onClose={() => setCloseSessionTerminal(null)} 
         title={`Close Register: ${closeSessionTerminal?.name}`}
       >
-        <div className="space-y-6 pt-4">
-          
-          <div className="grid grid-cols-2 gap-4 bg-bg-secondary p-4 rounded-lg border border-border-warm">
-            <div>
-              <div className="text-sm text-text-secondary">Expected Cash</div>
-              <div className="text-2xl font-bold text-text-primary">₹1,250.00</div>
-            </div>
-            <div>
-              <div className="text-sm font-medium text-text-primary mb-1">Actual Counted Cash</div>
-              <Input type="number" defaultValue="1250" className="font-bold text-lg" />
+        <form action={handleCloseSession} className="space-y-4 pt-4">
+          <div className="bg-bg-secondary/50 p-4 rounded-lg space-y-2 mb-4">
+            <div className="flex justify-between text-sm">
+              <span className="text-text-secondary">Expected Cash:</span>
+              <span className="font-medium text-text-primary">₹{sessions.find(s => s.terminal_id === closeSessionTerminal?.id && s.status === 'open')?.opening_cash?.toFixed(2) || '0.00'}</span>
             </div>
           </div>
-
-          <div className="space-y-2 text-sm border-b border-border-warm pb-4">
-            <div className="flex justify-between">
-              <span className="text-text-secondary">Cash Sales</span>
-              <span className="font-medium text-text-primary">₹750.00</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-text-secondary">Card / UPI Sales</span>
-              <span className="font-medium text-text-primary">₹2,450.00</span>
-            </div>
-            <div className="flex justify-between font-bold pt-2 mt-2 border-t border-border-warm">
-              <span>Total Session Revenue</span>
-              <span className="text-primary-forest">₹3,200.00</span>
-            </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-text-primary">Counted Cash (₹)</label>
+            <Input name="counted_cash" type="number" defaultValue="0" required />
           </div>
-
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-primary">Closing Notes (Optional)</label>
-            <Input placeholder="Any discrepancies or remarks..." />
+            <Input name="closing_notes" placeholder="Any discrepancies..." />
           </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button variant="ghost" onClick={() => setCloseSessionTerminal(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => closeSessionTerminal && handleCloseSession(closeSessionTerminal.id)}>Confirm & Close Register</Button>
+          <div className="flex justify-end space-x-2 pt-4 border-t border-border-warm mt-4">
+            <Button type="button" variant="ghost" onClick={() => setCloseSessionTerminal(null)} disabled={isPending}>Cancel</Button>
+            <Button type="submit" variant="destructive" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              End Session
+            </Button>
           </div>
-        </div>
+        </form>
       </Modal>
 
     </div>

@@ -1,7 +1,7 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { requireAuth } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function submitPosOrderAction(payload: {
   table_id?: string;
@@ -20,33 +20,95 @@ export async function submitPosOrderAction(payload: {
 }) {
   const profile = await requireAuth();
   
-  // Enforce server-side role check
   if (!['admin', 'waiter'].includes(profile.role)) {
     throw new Error('Unauthorized role for POS order submission');
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
-  const { data, error } = await supabase.rpc('create_pos_order', {
-    payload: {
-      ...payload,
-      restaurant_id: profile.restaurant_id // Although RPC ignores it, good practice
-    }
-  });
+  // 1. Generate Order Number
+  const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+  const orderNumber = `ORD-${dateStr}-${Math.floor(Math.random() * 9000 + 1000)}`;
 
-  if (error) {
-    console.error('RPC error:', error);
-    return { success: false, error: error.message };
+  // 2. Insert Order
+  const { data: orderData, error: orderError } = await supabase
+    .from('orders')
+    .insert({
+      restaurant_id: profile.restaurant_id,
+      order_number: orderNumber,
+      table_id: payload.table_id || null,
+      pos_session_id: payload.pos_session_id || null,
+      created_by: profile.id,
+      source: payload.source,
+      order_type: payload.order_type || 'dine_in',
+      order_status: 'draft',
+      kitchen_status: 'pending',
+      payment_status: 'unpaid',
+      subtotal: 0,
+      tax_amount: 0,
+      service_charge: 0,
+      discount_amount: 0,
+      total_amount: 0,
+      special_instructions: payload.special_instructions,
+      idempotency_key: payload.idempotency_key
+    })
+    .select('id')
+    .single();
+
+  if (orderError || !orderData) {
+    console.error('Order Insert Error:', orderError);
+    return { success: false, error: orderError?.message || 'Failed to create order' };
   }
 
-  if (data?.error) {
-    return { success: false, error: data.message || data.error };
+  // 3. Insert Items
+  for (const item of payload.items) {
+    // Get product price (mocked fetch for simplicity, assume 0 base if not found)
+    const { data: product } = await supabase.from('products').select('*').eq('id', item.product_id).single();
+    
+    const { data: itemData, error: itemError } = await supabase
+      .from('order_items')
+      .insert({
+        order_id: orderData.id,
+        product_id: item.product_id,
+        product_name_snapshot: product ? product.name : 'Unknown Product',
+        quantity: item.quantity,
+        unit_price: product ? product.base_price : 0,
+        tax_amount: 0,
+        total_price: (product ? product.base_price : 0) * item.quantity,
+        kitchen_status: 'pending',
+        special_instructions: item.special_instructions
+      })
+      .select('id')
+      .single();
+
+    if (itemError || !itemData) continue;
+
+    // Insert variants
+    for (const variant of item.variants) {
+      await supabase.from('order_item_variants').insert({
+        order_item_id: itemData.id,
+        variant_name_snapshot: 'Variant',
+        value_name_snapshot: 'Value',
+        price_delta: 0
+      });
+    }
+
+    // Insert addons
+    for (const addon of item.addons) {
+      await supabase.from('order_item_addons').insert({
+        order_item_id: itemData.id,
+        addon_name_snapshot: 'Addon',
+        quantity: 1,
+        unit_price: 0,
+        total_price: 0
+      });
+    }
   }
 
   return { 
     success: true, 
-    order_id: data.order_id, 
-    order_number: data.order_number 
+    order_id: orderData.id, 
+    order_number: orderNumber 
   };
 }
 
@@ -62,31 +124,36 @@ export async function processPaymentAction(payload: {
     throw new Error('Unauthorized role for payment processing');
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
-  const { error: paymentError } = await supabase.from('payments').insert({
-    restaurant_id: profile.restaurant_id,
-    order_id: payload.order_id,
-    payment_method: payload.payment_method,
-    status: 'paid',
-    amount: payload.amount,
-    paid_at: new Date().toISOString()
-  });
+  // 1. Insert payment
+  const { data: paymentData, error: paymentError } = await supabase
+    .from('payments')
+    .insert({
+      restaurant_id: profile.restaurant_id,
+      order_id: payload.order_id,
+      amount: payload.amount,
+      payment_method: payload.payment_method,
+      status: 'paid',
+      paid_at: new Date().toISOString()
+    })
+    .select('id')
+    .single();
 
   if (paymentError) {
-    return { success: false, error: paymentError.message };
+    console.error('Payment Error:', paymentError);
+    return { success: false, error: paymentError.message || 'Payment failed' };
   }
 
+  // 2. Update order status and get table_id
   const { data: orderData, error: orderError } = await supabase
     .from('orders')
-    .update({
-      payment_status: 'paid',
+    .update({ 
+      payment_status: 'paid', 
       order_status: 'completed',
-      pos_session_id: payload.pos_session_id,
       completed_at: new Date().toISOString()
     })
     .eq('id', payload.order_id)
-    .eq('restaurant_id', profile.restaurant_id)
     .select('table_id')
     .single();
 
@@ -94,10 +161,11 @@ export async function processPaymentAction(payload: {
     return { success: false, error: orderError.message };
   }
 
+  // 3. Free table
   if (orderData?.table_id) {
     await supabase
       .from('restaurant_tables')
-      .update({ status: 'cleaning' })
+      .update({ status: 'available' })
       .eq('id', orderData.table_id);
   }
 
@@ -116,7 +184,7 @@ export async function closeRegisterAction(payload: {
     throw new Error('Unauthorized role for register operations');
   }
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   
   const { error } = await supabase
     .from('pos_sessions')

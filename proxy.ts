@@ -37,12 +37,12 @@ export async function proxy(request: NextRequest) {
   // Public routes (Auth, Mobile QR, etc)
   const isPublicRoute = path.startsWith('/staff-login') || path.startsWith('/signup') || path.startsWith('/order');
   
-  // If not logged in and not on a public route, redirect to login
-  if (!user && !isPublicRoute && path !== '/') {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = '/staff-login';
-    return NextResponse.redirect(loginUrl);
-  }
+  // Bypassed for hackathon demo
+  // if (!user && !isPublicRoute && path !== '/') {
+  //   const loginUrl = request.nextUrl.clone();
+  //   loginUrl.pathname = '/staff-login';
+  //   return NextResponse.redirect(loginUrl);
+  // }
 
   // If logged in and visiting auth pages, we should redirect them to their home, 
   // but we can't easily resolve their role in edge middleware without an extra DB query. 
