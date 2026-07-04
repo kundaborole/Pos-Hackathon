@@ -16,7 +16,7 @@ export function CustomerMobileShell({ children, hideNav: propHideNav }: { childr
 
   return (
     <div className="flex flex-col min-h-screen bg-bg-base">
-      <div className="flex-1 w-full max-w-[430px] mx-auto bg-bg-surface shadow-sm overflow-hidden relative">
+      <div className="flex-1 w-full bg-bg-surface shadow-sm overflow-hidden relative">
         <main className={hideNav ? "h-full" : "pb-16"}>
           {children}
         </main>
