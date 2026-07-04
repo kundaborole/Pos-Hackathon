@@ -11,7 +11,7 @@ import { Trash2, Edit2, Plus, GripVertical, Check, AlertCircle, X, Loader2, QrCo
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 
-import { FloorWithTables, RestaurantTable } from "@/lib/api/floors";
+import { FloorWithTables } from "@/lib/api/floors";
 import { saveFloorAction, saveTableAction, deleteTableAction } from "./actions";
 import { useRouter } from "next/navigation";
 
