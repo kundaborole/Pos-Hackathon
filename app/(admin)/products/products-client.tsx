@@ -55,6 +55,7 @@ export default function ProductsClient({
       
       const is_available = editingProduct ? (editingProduct.is_available ?? true) : true;
       const send_to_kitchen = editingProduct ? (editingProduct.send_to_kitchen ?? true) : true;
+      const image_url = formData.get("image_url") as string || null;
 
       if (!name || !category_id) return;
 
@@ -64,7 +65,8 @@ export default function ProductsClient({
         category_id,
         base_price,
         is_available,
-        send_to_kitchen
+        send_to_kitchen,
+        image_url
       });
       if (res.success) {
         handleCloseDrawer();
@@ -188,6 +190,11 @@ export default function ProductsClient({
               <div className="space-y-2">
                 <label className="text-sm font-medium text-text-primary">Base Price ($)</label>
                 <Input name="base_price" type="number" step="0.01" defaultValue={editingProduct?.base_price || ""} placeholder="0.00" required />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-text-primary">Image URL (Optional)</label>
+                <Input name="image_url" defaultValue={editingProduct?.image_url || ""} placeholder="/images/pizza.png or https://..." />
+                <p className="text-[10px] text-text-secondary">Paste a link to an image or use a local path like /images/pizza.png</p>
               </div>
             </div>
 

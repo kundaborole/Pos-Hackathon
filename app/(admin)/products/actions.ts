@@ -11,6 +11,7 @@ export async function saveProductAction(payload: {
   base_price: number;
   is_available: boolean;
   send_to_kitchen: boolean;
+  image_url?: string | null;
 }) {
   const supabase = createAdminClient();
   const profile = await requireAuth();
@@ -27,6 +28,7 @@ export async function saveProductAction(payload: {
         base_price: payload.base_price,
         is_available: payload.is_available,
         send_to_kitchen: payload.send_to_kitchen,
+        image_url: payload.image_url,
       })
       .eq('id', payload.id)
       .eq('restaurant_id', restaurant_id);
@@ -42,6 +44,7 @@ export async function saveProductAction(payload: {
         base_price: payload.base_price,
         is_available: payload.is_available,
         send_to_kitchen: payload.send_to_kitchen,
+        image_url: payload.image_url,
       });
       
     if (error) return { success: false, error: error.message };
