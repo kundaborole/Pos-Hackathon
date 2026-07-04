@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { Database } from '@/types/supabase';
+import { redirect } from 'next/navigation';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -31,31 +32,31 @@ export async function getCurrentProfile(): Promise<Profile | null> {
 }
 
 /**
- * Throws if the user is not authenticated or not active.
- * Used to protect Server Components and Server Actions.
+ * Redirects if the user is not authenticated or not active.
+ * Used to protect Server Components.
  */
 export async function requireAuth() {
   const profile = await getCurrentProfile();
   
   if (!profile) {
-    throw new Error('UNAUTHENTICATED');
+    redirect('/login');
   }
 
   if (!profile.is_active) {
-    throw new Error('ACCOUNT_INACTIVE');
+    redirect('/login?error=account_inactive');
   }
 
   return profile;
 }
 
 /**
- * Throws if the user does not have one of the required roles.
+ * Redirects if the user does not have one of the required roles.
  */
 export async function requireRole(allowedRoles: Database['public']['Enums']['staff_role'][]) {
   const profile = await requireAuth();
 
   if (!allowedRoles.includes(profile.role)) {
-    throw new Error('UNAUTHORIZED');
+    redirect('/');
   }
 
   return profile;

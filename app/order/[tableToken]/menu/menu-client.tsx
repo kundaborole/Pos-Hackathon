@@ -37,7 +37,7 @@ export default function MenuClient({
         <div className="px-4 py-3 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-black text-text-primary">{session.restaurant_name}</h1>
-            <div className="text-xs font-bold text-text-secondary">Table {session.table_number} • Dine In</div>
+            <div className="text-xs font-bold text-text-secondary">{session.floor_name} - Table {session.table_number} • Dine In</div>
           </div>
           <Link href={`/order/${session.public_token}/cart`} className="relative p-2 bg-bg-secondary rounded-full">
             <ShoppingBag className="h-5 w-5 text-text-primary" />

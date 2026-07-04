@@ -1,8 +1,9 @@
 import { requireAuth } from '@/lib/auth';
 import { getAvailableProducts, getCategories } from '@/lib/api/products';
 import { getActiveFloors } from '@/lib/api/floors';
-import { getActiveSession } from '@/lib/api/pos';
+import { getActiveSession, getPendingOrders, getSessionPayments } from '@/lib/api/pos';
 import POSOrderClient from './pos-client';
+import CashierDashboardClient from './cashier-dashboard';
 
 export default async function POSOrderPage({
   searchParams
@@ -11,6 +12,29 @@ export default async function POSOrderPage({
 }) {
   const profile = await requireAuth();
   
+  if (profile.role === 'cashier') {
+    const [activeSession, pendingOrders] = await Promise.all([
+      getActiveSession(profile.restaurant_id, profile.id),
+      getPendingOrders(profile.restaurant_id)
+    ]);
+    
+    // Fetch payments for session if session is active
+    let sessionPayments: any[] = [];
+    if (activeSession) {
+      sessionPayments = await getSessionPayments(profile.restaurant_id, activeSession.id);
+    }
+    
+    return (
+      <CashierDashboardClient 
+        activeSession={activeSession}
+        profileName={profile.full_name}
+        pendingOrders={pendingOrders}
+        sessionPayments={sessionPayments}
+      />
+    );
+  }
+
+  // Fallback to POS order entry for admin / waiter
   const [products, categories, floors, activeSession, resolvedParams] = await Promise.all([
     getAvailableProducts(profile.restaurant_id),
     getCategories(profile.restaurant_id),

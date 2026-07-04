@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CustomerMobileShell } from "@/components/layout/customer-mobile-shell";
 import { Button } from "@/components/ui/button";
 import { Wifi, WifiOff, CheckCircle2, CircleDashed, Check, Bell, Receipt } from "lucide-react";
-import { FullOrder } from "@/lib/api/orders";
+import type { FullOrder } from "@/lib/api/orders";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -20,47 +20,32 @@ export default function OrderTrackerClient({
   const [isOnline, setIsOnline] = React.useState(true);
 
   React.useEffect(() => {
-    const supabase = createClient();
+    setIsOnline(true);
     
-    const channel = supabase.channel(`public_order_${order.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
-          filter: `id=eq.${order.id}`
-        },
-        () => {
-          router.refresh();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'order_items',
-          filter: `order_id=eq.${order.id}`
-        },
-        () => {
-          router.refresh();
-        }
-      )
-      .subscribe((status) => {
-        setIsOnline(status === 'SUBSCRIBED');
-      });
+    // Fallback polling
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 5000);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [order.id, router]);
+    return () => clearInterval(interval);
+  }, [router]);
 
   const getStepStatus = () => {
-    if (order.kitchen_status === 'pending') return 1;
-    if (order.kitchen_status === 'preparing') return 2;
-    if (order.kitchen_status === 'completed' && order.order_status !== 'completed') return 3;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const tableStatus = (order as any).table?.status;
+
+    // Fully completed by cashier
     if (order.order_status === 'completed') return 4;
+    
+    // Waiter has served the food, table is now eating/waiting for payment
+    if (tableStatus === 'waiting_payment') return 4;
+    
+    // Kitchen completed, waiting for Waiter to serve
+    if (order.kitchen_status === 'completed' && order.order_status !== 'completed') return 3;
+    
+    if (order.kitchen_status === 'preparing') return 2;
+    if (order.kitchen_status === 'pending') return 1;
+    
     return 1;
   };
 

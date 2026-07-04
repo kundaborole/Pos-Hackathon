@@ -33,8 +33,8 @@ export default function Home() {
     },
     {
       name: "Customer QR Demo",
-      description: "Simulate a customer scanning a table QR code to order.",
-      href: "/order/f5930182-b38b-4f37-a05c-2105b26defff",
+      description: "Select a table from the restaurant map to begin ordering.",
+      href: "/demo/book",
       icon: QrCode,
       color: "bg-rose-500/10 text-rose-600 border-rose-500/20 hover:border-rose-500/40",
     }

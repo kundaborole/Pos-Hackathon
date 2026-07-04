@@ -70,7 +70,12 @@ export async function saveTableAction(payload: {
       .eq('id', payload.id)
       .eq('restaurant_id', restaurant_id);
     
-    if (error) return { success: false, error: error.message };
+    if (error) {
+      if (error.code === '23505') {
+        return { success: false, error: `Table number "${payload.table_number}" already exists in your restaurant.` };
+      }
+      return { success: false, error: error.message };
+    }
   } else {
     const { error } = await supabase
       .from('restaurant_tables')
@@ -84,7 +89,12 @@ export async function saveTableAction(payload: {
         status: 'available'
       });
       
-    if (error) return { success: false, error: error.message };
+    if (error) {
+      if (error.code === '23505') {
+        return { success: false, error: `Table number "${payload.table_number}" already exists in your restaurant.` };
+      }
+      return { success: false, error: error.message };
+    }
   }
 
   revalidatePath('/floors');

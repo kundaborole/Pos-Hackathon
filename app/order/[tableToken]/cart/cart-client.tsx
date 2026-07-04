@@ -61,7 +61,7 @@ export default function CartClient({ session }: { session: ValidatedSession }) {
         {/* Header */}
         <div className="sticky top-0 z-40 bg-white border-b border-border-warm pt-safe px-4 py-3">
           <h1 className="text-xl font-black text-text-primary">Your Cart</h1>
-          <div className="text-xs font-bold text-text-secondary">{session.restaurant_name} • Table {session.table_number}</div>
+          <div className="text-xs font-bold text-text-secondary">{session.restaurant_name} • {session.floor_name} - Table {session.table_number}</div>
         </div>
 
         {/* Cart Items */}

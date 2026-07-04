@@ -26,6 +26,8 @@ export type ValidatedSession = {
   public_token: string;
   restaurant_name: string;
   table_number: string;
+  floor_name: string;
+  capacity: number;
 };
 
 // 1. Validate the active session
@@ -35,7 +37,7 @@ export const validateTableSession = cache(async (publicToken: string): Promise<V
 
   const { data: session, error: sessionErr } = await adminClient
     .from('table_sessions')
-    .select('restaurant_id, table_id, public_token, status, restaurants(name, is_open), restaurant_tables(table_number)')
+    .select('restaurant_id, table_id, public_token, status, restaurants(name, is_open), restaurant_tables(table_number, capacity, floors(name))')
     .eq('public_token', publicToken)
     .eq('status', 'active')
     .single();
@@ -56,7 +58,11 @@ export const validateTableSession = cache(async (publicToken: string): Promise<V
     // @ts-ignore - relation typing
     restaurant_name: session.restaurants?.name,
     // @ts-ignore - relation typing
-    table_number: session.restaurant_tables?.table_number
+    table_number: session.restaurant_tables?.table_number,
+    // @ts-ignore - relation typing
+    floor_name: session.restaurant_tables?.floors?.name || 'Main Floor',
+    // @ts-ignore - relation typing
+    capacity: session.restaurant_tables?.capacity || 4
   };
 });
 
@@ -133,6 +139,7 @@ export const getPublicOrderDetails = cache(async (orderId: string, publicToken: 
     .from('orders')
     .select(`
       *,
+      table:restaurant_tables(*),
       items:order_items(
         *,
         variants:order_item_variants(*),

@@ -28,50 +28,18 @@ export default function KitchenClient({
   const [processingItems, setProcessingItems] = React.useState<Set<string>>(new Set());
   const [processingOrders, setProcessingOrders] = React.useState<Set<string>>(new Set());
 
-  // Setup Realtime Subscription
+  // Setup Robust Polling
   React.useEffect(() => {
-    const supabase = createClient();
-    // setIsOnline(true);
+    setIsOnline(true);
+    
+    const interval = setInterval(() => {
+      if (!isRefreshing) {
+        router.refresh();
+      }
+    }, 5000);
 
-    const channel = supabase.channel('kitchen_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
-          filter: `restaurant_id=eq.${restaurantId}`
-        },
-        () => {
-          // When an order changes, just refresh the page data to keep it simple and perfectly in sync
-          router.refresh();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'order_items',
-          // Can't filter by restaurant_id directly on order_items easily in realtime,
-          // but we can just trigger a refresh
-        },
-        () => {
-          router.refresh();
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          setIsOnline(true);
-        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-          setIsOnline(false);
-        }
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [restaurantId, router]);
+    return () => clearInterval(interval);
+  }, [router, isRefreshing]);
 
   // Sync state when initialTickets changes (due to router.refresh)
   React.useEffect(() => {

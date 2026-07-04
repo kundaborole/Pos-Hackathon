@@ -147,20 +147,16 @@ export default function POSOrderClient({
   const total = subtotal + tax;
 
   const handleSubmit = async () => {
-    if (!activeSession) {
-      setErrorMsg("No active POS session. Please open a session first.");
-      return;
-    }
     if (cart.length === 0) return;
     
     setIsSubmitting(true);
     setErrorMsg(null);
 
     const payload = {
-      table_id: selectedTableId || "", // "" becomes NULL in DB if handled via logic, but actually we should pass empty string or null? Server action needs string.
-      pos_session_id: activeSession.id,
-      source: "pos",
-      order_type: "dine_in",
+      table_id: selectedTableId || undefined,
+      pos_session_id: activeSession?.id || undefined,
+      source: "waiter",
+      order_type: selectedTableId ? "dine_in" : "takeaway",
       special_instructions: "",
       idempotency_key: crypto.randomUUID(),
       items: cart.map(item => ({

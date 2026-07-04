@@ -12,6 +12,7 @@ import { FloorWithTables } from "@/lib/api/floors";
 import { Database } from "@/types/supabase";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { updateTableStatusAction } from "./actions";
 
 type TableStatus = Database['public']['Enums']['table_status'];
 
@@ -54,27 +55,12 @@ export default function OperationalFloorClient({
   const router = useRouter();
 
   React.useEffect(() => {
-    const supabase = createClient();
-    
-    // We can just listen to the whole restaurant_tables table and refresh the view
-    // so we get fresh floors & tables data securely from the server.
-    const channel = supabase.channel('floor_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'restaurant_tables'
-        },
-        () => {
-          router.refresh();
-        }
-      )
-      .subscribe();
+    // Robust polling fallback
+    const interval = setInterval(() => {
+      router.refresh();
+    }, 5000);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => clearInterval(interval);
   }, [router]);
 
   const activeFloor = initialFloors.find(f => f.id === activeFloorId);
@@ -156,10 +142,10 @@ export default function OperationalFloorClient({
               <Card key={table.id} className={cn("border-2 shadow-sm transition-all hover:shadow-md", getTableColors(table.status || 'available'))}>
                 <CardContent className="p-4 flex flex-col h-full">
                   <div className="flex justify-between items-start mb-2">
-                    <div className="text-2xl font-bold text-text-primary tracking-tight">T-{table.table_number}</div>
-                    <div className="flex items-center space-x-1 text-xs text-text-secondary">
-                      <Users className="h-3 w-3" />
-                      <span>{table.capacity || 2}</span>
+                    <h3 className="font-bold text-lg">{activeFloor?.name} - Table {table.table_number}</h3>
+                    <div className="flex items-center text-text-secondary bg-black/5 px-2 py-1 rounded text-xs font-bold">
+                      <Users className="h-3 w-3 mr-1" />
+                      {table.capacity}
                     </div>
                   </div>
 
@@ -189,7 +175,17 @@ export default function OperationalFloorClient({
                       <Button size="sm" variant="secondary" className="h-7 text-xs px-2">View</Button>
                     )}
                     {table.status === 'ready' && (
-                      <Button size="sm" className="h-7 text-xs px-2 bg-coral hover:bg-coral/90 text-white">Serve</Button>
+                      <Button 
+                        size="sm" 
+                        className="h-7 text-xs px-2 bg-coral hover:bg-coral/90 text-white"
+                        onClick={async () => {
+                          // Change status to waiting_payment so cashier can collect
+                          await updateTableStatusAction(table.id, 'waiting_payment');
+                          router.refresh();
+                        }}
+                      >
+                        Serve
+                      </Button>
                     )}
                     {table.status === 'waiting_payment' && (
                       <Button size="sm" className="h-7 text-xs px-2 bg-muted-gold hover:bg-muted-gold/90 text-white border-none shadow-sm flex items-center">

@@ -63,7 +63,7 @@ export const getProducts = cache(async (restaurantId: string): Promise<FullProdu
 });
 
 export const getAvailableProducts = cache(async (restaurantId: string): Promise<FullProduct[]> => {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('products')
     .select(`
