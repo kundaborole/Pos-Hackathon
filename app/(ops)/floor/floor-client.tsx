@@ -84,6 +84,13 @@ export default function OperationalFloorClient({
 
       {/* Main Floor Area */}
       <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Alerts for Waiter */}
+        {initialFloors.flatMap(f => f.tables).filter(t => t.status === 'ready').length > 0 && (
+          <div className="bg-coral text-white px-4 py-3 shrink-0 flex items-center justify-center font-bold text-sm shadow-md animate-pulse z-10 relative">
+            🛎️ Orders Ready in Kitchen! Please serve the highlighted tables immediately.
+          </div>
+        )}
+
         {/* Top Controls & Occupancy Summary */}
         <div className="bg-bg-surface border-b border-border-warm p-4 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex space-x-2">
