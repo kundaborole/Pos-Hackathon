@@ -100,3 +100,23 @@ export async function saveTableAction(payload: {
   revalidatePath('/floors');
   return { success: true };
 }
+
+export async function deleteTableAction(tableId: string) {
+  const supabase = createAdminClient();
+  const profile = await requireAuth();
+  
+  if (!profile.restaurant_id) throw new Error("No restaurant found");
+
+  const { error } = await supabase
+    .from('restaurant_tables')
+    .delete()
+    .eq('id', tableId)
+    .eq('restaurant_id', profile.restaurant_id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/floors');
+  return { success: true };
+}

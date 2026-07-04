@@ -7,14 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/data-table";
 import { Modal } from "@/components/ui/modal";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Edit2, Trash2, QrCode } from "lucide-react";
+import { Trash2, Edit2, Plus, GripVertical, Check, AlertCircle, X, Loader2, QrCode } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { cn } from "@/lib/utils";
 
-import { FloorWithTables } from "@/lib/api/floors";
-import { saveFloorAction, saveTableAction } from "./actions";
+import { FloorWithTables, RestaurantTable } from "@/lib/api/floors";
+import { saveFloorAction, saveTableAction, deleteTableAction } from "./actions";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
 
 type TableType = FloorWithTables['tables'][0];
 
@@ -101,6 +100,19 @@ export default function FloorsConfigurationClient({
     setEditingFloor(null);
     setFloorName("");
     setFloorIsActive(true);
+  };
+
+  const handleDeleteTable = (tableId: string) => {
+    if (confirm("Are you sure you want to delete this table? This cannot be undone.")) {
+      startTransition(async () => {
+        const res = await deleteTableAction(tableId);
+        if (res.success) {
+          router.refresh();
+        } else {
+          alert("Failed to delete table: " + res.error);
+        }
+      });
+    }
   };
 
   const handleSaveFloor = () => {
@@ -199,7 +211,7 @@ export default function FloorsConfigurationClient({
                       <Button variant="ghost" size="icon" onClick={() => handleEditTable(table)}>
                         <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="text-coral hover:text-coral hover:bg-coral/10">
+                      <Button variant="ghost" size="icon" className="text-coral hover:text-coral hover:bg-coral/10" onClick={() => handleDeleteTable(table.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </TableCell>
